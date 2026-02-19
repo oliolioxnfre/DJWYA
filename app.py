@@ -13,6 +13,8 @@ def get_artist_genres(artist_name):
     try:
         # 2. Get the artist object
         artist = network.get_artist(artist_name)
+        artistid = artist.get_mbid()
+        print(artistid)
         
         # 3. Get the top tags (genres) assigned to this artist
         # Last.fm returns these as a list of "TopItem" objects
@@ -33,10 +35,10 @@ my_genres = get_artist_genres("Subtronics")
 print(f"Subtronics Genres: {my_genres}")
 
 
-def get_song_genres(song_name):
+def get_song_genres(artist_name, song_name):
     try:
         # 2. Get the artist object
-        song = network.get_track(song_name)
+        song = network.get_track(artist_name, song_name)
         
         # 3. Get the top tags (genres) assigned to this artist
         # Last.fm returns these as a list of "TopItem" objects
@@ -50,6 +52,10 @@ def get_song_genres(song_name):
     except Exception as e:
         print(f"Couldn't find genres for {song_name}")
         return []
+
+my_song_genres = get_song_genres("Subtronics", "Griztronics")
+
+print(f"Griztronics Genres: {my_song_genres}")
 
 
 
@@ -74,7 +80,7 @@ print(f"\nFetching your Liked Songs... (This might take a minute if you have tho
 
 # 3. Pull ALL Liked Songs (Handling Pagination)
 saved_tracks = []
-results = sp.current_user_saved_tracks(limit=20) # 50 is the max Spotify allows per pull
+results = sp.current_user_saved_tracks(limit=10) # 50 is the max Spotify allows per pull
 for i in results['items']:
     print("Song: " + i['track']['name'])
     for artist in i['track']['artists']:
