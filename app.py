@@ -1,10 +1,13 @@
 import pylast
+import csv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
 
 
-LASTFM_API_KEY = "278dd2789daa67c37bb1369fb6311bb2"
-LASTFM_API_SECRET = "b63a70bf592daacaa90092b153ef6ca7" 
+
 electronic_genres = [
     # --- PARENT: HOUSE ---
     'house', 'deep house', 'tech house', 'progressive house', 'future house', 
@@ -75,18 +78,13 @@ def is_artist_electronic(artist_name):
 
 
 
-
-SPOTIFY_CLIENT_ID = "82dac832ac914fbbb09196653244304f"
-SPOTIFY_CLIENT_SECRET = "b31f8dfded994664af02b33fc14c820c"
-REDIRECT_URI = "http://127.0.0.1:8000/callback"
-
-# NEW SCOPE: We need permission to read your "Saved Tracks" (Liked Songs)
+#--------------------------------Spotify Integration --------------------------------------
 scope = "user-library-read "
 
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
     client_id=SPOTIFY_CLIENT_ID,
     client_secret=SPOTIFY_CLIENT_SECRET,
-    redirect_uri=REDIRECT_URI,
+    redirect_uri=SPOTIFY_REDIRECT_URI,
     scope=scope
 ))
 
@@ -147,8 +145,91 @@ def print_electronic_artists():
     for artist in electronic_artists.values():
         print(f"{artist['name']} (Count: {artist['count']})")
 
-print_electronic_artists()
+
+
+
+
+#--------------------------------Set Conversion + Festival Matching --------------------------------------
+# Convert the user's artists into a "Set"
+user_artists = set([artist['name'] for artist in electronic_artists.values()])
+
+# 2. Load the Mock Festivals into a dictionary
+festivals = {}
+with open('mock_festivals.csv', mode='r') as file:
+    reader = csv.DictReader(file)
+    for row in reader:
+        fest = row['festival_name']
+        artist = row['artist_name']
+        
+        if fest not in festivals:
+            festivals[fest] = set() # Using a set here too
+        festivals[fest].add(artist)
+
+# 3. The Comparison Engine
+
+match_scores = []
+
+for fest_name, lineup in festivals.items():
+    # Find the overlapping artists using the "&" operator
+    overlap = user_artists & lineup
+    
+    # Calculate what percentage of the festival the user already likes
+    match_percentage = (len(overlap) / len(lineup)) * 100
+    
+    match_scores.append({
+        'festival': fest_name,
+        'score': match_percentage,
+        'shared_artists': list(overlap)
+    })
+
+# 4. Sort and Print the results (Highest score first)
+match_scores.sort(key=lambda x: x['score'], reverse=True)
+
+def print_match_scores():
+    print("\n--- FESTIVAL MATCH RESULTS ---")
+    for match in match_scores:
+        print(f"{match['festival']}: {match['score']:.1f}% Match")
+        print(f"   Artists you know: {', '.join(match['shared_artists'])}\n")
+
+#print_electronic_artists()
 #print_entire_dict()
 #print(str(is_artist_electronic("swedm®")))
 
+#--------------------------------Supabase Integration --------------------------------------
+
+
+load_dotenv()
+url = os.environ.get("SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
+def sync_to_supabase(artist_list, user_id="demo_user"):
+    for item in artist_list:
+        # --- PART A: Update the Global Artist Dictionary ---
+        # We only send info that is "Universal" to this table
+        artist_metadata = {
+            "spotify_id": item['spotify_id'],
+            "name": item['name'],
+            # "genres": [] # You'll plug in your Last.fm logic here later!
+        }
+        
+        # .upsert() means "Insert if new, do nothing if already exists"
+        supabase.table("artists").upsert(artist_metadata).execute()
+
+        # --- PART B: Update your Personal Library ---
+        # This links YOU to that artist and saves your specific song count
+        library_data = {
+            "user_id": user_id,
+            "artist_id": item['spotify_id'],
+            "count": item['count']
+        }
+        
+        # We use a unique constraint in Supabase so this doesn't create 
+        # duplicate rows for the same user/artist combo
+        supabase.table("user_lib").upsert(library_data, on_conflict="user_id,artist_id").execute()
+        
+        print(f"Synced {item['name']} to your cloud library.")
+
+# RUN IT
+sync_to_supabase(electronic_artists.values())
         
