@@ -6,6 +6,15 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+load_dotenv()
+
+LASTFM_API_KEY = os.environ.get("LASTFM_API_KEY")
+LASTFM_API_SECRET = os.environ.get("LASTFM_API_SECRET")
+
+SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
+SPOTIFY_REDIRECT_URI = os.environ.get("SPOTIFY_REDIRECT_URI")
+
 
 
 electronic_genres = [
@@ -47,17 +56,13 @@ electronic_genres = [
 # Initialize the network
 network = pylast.LastFMNetwork(api_key=LASTFM_API_KEY, api_secret=LASTFM_API_SECRET)
 
+#returns the top 7 genres for an artist
 def get_artist_genres(artist_name):
     try:
-        # 2. Get the artist object
         artist = network.get_artist(artist_name)
-        
-        # 3. Get the top tags (genres) assigned to this artist
-        # Last.fm returns these as a list of "TopItem" objects
         top_tags = artist.get_top_tags(limit=7)
         
-        # 4. Extract just the names
-        # e.g., ['dubstep', 'electronic', 'bass music']
+        #Extract just the names
         genres = [tag.item.get_name().lower() for tag in top_tags]
         
         return genres
@@ -65,14 +70,17 @@ def get_artist_genres(artist_name):
         print(f"Couldn't find genres for {artist_name}")
         return []
 
-# TEST IT:
-#my_genres = get_artist_genres("Skrillex")
-#print(f"Skrillex Genres: {my_genres}")
-
+#returns true if the artist has any electronic genres
 def is_artist_electronic(artist_name):
     genres = get_artist_genres(artist_name)
-    # Check if ANY of the artist's genres appear in our big electronic list
     return any(genre in electronic_genres for genre in genres)
+
+#Returns genres only if they have electronic genres
+def get_electronic_genres(artist_name):
+    genres = get_artist_genres(artist_name)
+    for genre in genres:
+        if genre in electronic_genres:
+            return genres
     
 
 
@@ -133,7 +141,8 @@ for item in results['items']:
                 electronic_artists[artist_id] = {
                     "spotify_id": artist_id,
                     "name": artist['name'],
-                    "count": 1
+                    "count": 1,
+                    "genres": get_electronic_genres(artist['name'])
                 }
             else:
                 electronic_artists[artist_id]["count"] += 1
@@ -143,8 +152,10 @@ def print_entire_dict():
 
 def print_electronic_artists():
     for artist in electronic_artists.values():
-        print(f"{artist['name']} (Count: {artist['count']})")
+        print(f"{artist['name']} (Dectected as Electronic: {is_artist_electronic(artist['name'])}) (Count: {artist['count']})")
 
+#print_electronic_artists()
+#print(get_electronic_genres("Nakeesha"))
 
 
 
@@ -198,7 +209,7 @@ def print_match_scores():
 #--------------------------------Supabase Integration --------------------------------------
 
 
-load_dotenv()
+
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
@@ -210,7 +221,7 @@ def sync_to_supabase(artist_list, user_id="demo_user"):
         artist_metadata = {
             "spotify_id": item['spotify_id'],
             "name": item['name'],
-            # "genres": [] # You'll plug in your Last.fm logic here later!
+            "genres": get_electronic_genres(item['name'])
         }
         
         # .upsert() means "Insert if new, do nothing if already exists"
