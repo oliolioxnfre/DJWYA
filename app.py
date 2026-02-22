@@ -15,6 +15,9 @@ SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET")
 SPOTIFY_REDIRECT_URI = os.environ.get("SPOTIFY_REDIRECT_URI")
 
+url = os.environ.get("SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
+
 
 
 electronic_genres = [
@@ -154,7 +157,7 @@ def print_electronic_artists():
     for artist in electronic_artists.values():
         print(f"{artist['name']} (Dectected as Electronic: {is_artist_electronic(artist['name'])}) (Count: {artist['count']})")
 
-#print_electronic_artists()
+print_electronic_artists()
 #print(get_electronic_genres("Nakeesha"))
 
 
@@ -210,8 +213,7 @@ def print_match_scores():
 
 
 
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
+
 supabase: Client = create_client(url, key)
 
 def sync_to_supabase(artist_list, user_id="demo_user"):
@@ -242,5 +244,5 @@ def sync_to_supabase(artist_list, user_id="demo_user"):
         print(f"Synced {item['name']} to your cloud library.")
 
 # RUN IT
-sync_to_supabase(electronic_artists.values())
+#sync_to_supabase(electronic_artists.values())
         
