@@ -210,7 +210,7 @@ def print_match_scores():
 #print(str(is_artist_electronic("swedm®")))
 
 #--------------------------------Supabase Integration --------------------------------------
-
+ 
 
 
 
