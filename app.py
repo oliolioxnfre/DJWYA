@@ -89,7 +89,7 @@ def get_electronic_genres(genres):
 electronic_artists = {}
 
 try:
-    with open("liked_songs/tenth_songs.csv", mode='r', encoding='utf-8') as file:
+    with open("liked_songs/complextro.csv", mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         
         print("Parsing Local Liked Songs CSV...")
@@ -162,6 +162,7 @@ print_electronic_artists()
 
 
 #--------------------------------Set Conversion + Festival Matching --------------------------------------
+"""
 # Convert the user's artists into a "Set"
 user_artists = set([artist['name'] for artist in electronic_artists.values()])
 
@@ -206,7 +207,7 @@ def print_match_scores():
 #print_electronic_artists()
 #print_entire_dict()
 #print(str(is_artist_electronic("swedm®")))
-
+"""
 #--------------------------------Supabase Integration --------------------------------------
  
 

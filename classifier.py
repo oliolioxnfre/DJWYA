@@ -62,14 +62,14 @@ class VibeClassifier:
     # The Master Sonic DNA Dictionary
     SONIC_DNA = {
         # --- PARENT: HOUSE ---
-        'house':             {'intensity': 5, 'euphoria': 7, 'space': 5, 'pulse': 8, 'chaos': 3, 'swing': 7},
-        'deep house':        {'intensity': 3, 'euphoria': 6, 'space': 8, 'pulse': 7, 'chaos': 2, 'swing': 6},
-        'tech house':        {'intensity': 6, 'euphoria': 5, 'space': 5, 'pulse': 9, 'chaos': 3, 'swing': 7},
-        'progressive house': {'intensity': 5, 'euphoria': 8, 'space': 7, 'pulse': 8, 'chaos': 3, 'swing': 4},
-        'future house':      {'intensity': 6, 'euphoria': 7, 'space': 5, 'pulse': 8, 'chaos': 4, 'swing': 6},
-        'bass house':        {'intensity': 8, 'euphoria': 4, 'space': 3, 'pulse': 8, 'chaos': 5, 'swing': 6},
+        'house':             {'intensity': 5, 'euphoria': 7, 'space': 5, 'pulse': 10, 'chaos': 3, 'swing': 7},
+        'deep house':        {'intensity': 3, 'euphoria': 6, 'space': 8, 'pulse': 10, 'chaos': 2, 'swing': 6},
+        'tech house':        {'intensity': 6, 'euphoria': 5, 'space': 5, 'pulse': 10, 'chaos': 3, 'swing': 7},
+        'progressive house': {'intensity': 5, 'euphoria': 8, 'space': 7, 'pulse': 10, 'chaos': 3, 'swing': 4},
+        'future house':      {'intensity': 6, 'euphoria': 7, 'space': 5, 'pulse': 10, 'chaos': 4, 'swing': 6},
+        'bass house':        {'intensity': 8, 'euphoria': 4, 'space': 3, 'pulse': 10, 'chaos': 5, 'swing': 6},
         'tropical house':    {'intensity': 3, 'euphoria': 9, 'space': 6, 'pulse': 7, 'chaos': 2, 'swing': 5},
-        'electro house':     {'intensity': 7, 'euphoria': 6, 'space': 4, 'pulse': 8, 'chaos': 5, 'swing': 4},
+        'electro house':     {'intensity': 7, 'euphoria': 6, 'space': 4, 'pulse': 10, 'chaos': 5, 'swing': 4},
         'acid house':        {'intensity': 6, 'euphoria': 5, 'space': 5, 'pulse': 8, 'chaos': 6, 'swing': 5},
         'g-house':           {'intensity': 7, 'euphoria': 3, 'space': 4, 'pulse': 8, 'chaos': 3, 'swing': 7},
         'afro house':        {'intensity': 4, 'euphoria': 6, 'space': 6, 'pulse': 7, 'chaos': 3, 'swing': 9},
@@ -120,8 +120,8 @@ class VibeClassifier:
         'atmospheric dnb':   {'intensity': 5, 'euphoria': 7, 'space': 9, 'pulse': 2, 'chaos': 3, 'swing': 7},
 
         # --- PARENT: BASS MUSIC & DUBSTEP ---
-        'dubstep':           {'intensity': 8, 'euphoria': 4, 'space': 5, 'pulse': 2, 'chaos': 6, 'swing': 5},
-        'riddim':            {'intensity': 9, 'euphoria': 2, 'space': 2, 'pulse': 3, 'chaos': 5, 'swing': 6},
+        'dubstep':           {'intensity': 9, 'euphoria': 4, 'space': 5, 'pulse': 2, 'chaos': 6, 'swing': 5},
+        'riddim':            {'intensity': 10, 'euphoria': 2, 'space': 2, 'pulse': 3, 'chaos': 5, 'swing': 6},
         'brostep':           {'intensity': 9, 'euphoria': 4, 'space': 4, 'pulse': 2, 'chaos': 8, 'swing': 4},
         'future bass':       {'intensity': 6, 'euphoria': 9, 'space': 8, 'pulse': 4, 'chaos': 5, 'swing': 4},
         'trap':              {'intensity': 8, 'euphoria': 4, 'space': 4, 'pulse': 3, 'chaos': 5, 'swing': 7},
@@ -130,13 +130,13 @@ class VibeClassifier:
         'color bass':        {'intensity': 8, 'euphoria': 8, 'space': 6, 'pulse': 3, 'chaos': 7, 'swing': 5},
         'melodic dubstep':   {'intensity': 7, 'euphoria': 9, 'space': 8, 'pulse': 2, 'chaos': 4, 'swing': 4},
         'deathstep':         {'intensity': 10,'euphoria': 1, 'space': 3, 'pulse': 2, 'chaos': 8, 'swing': 3},
-        'uk garage':         {'intensity': 4, 'euphoria': 7, 'space': 5, 'pulse': 4, 'chaos': 3, 'swing': 10},
-        'speed garage':      {'intensity': 6, 'euphoria': 6, 'space': 4, 'pulse': 5, 'chaos': 3, 'swing': 9},
+        'uk garage':         {'intensity': 4, 'euphoria': 7, 'space': 5, 'pulse': 10, 'chaos': 3, 'swing': 10},
+        'speed garage':      {'intensity': 6, 'euphoria': 6, 'space': 4, 'pulse': 8, 'chaos': 3, 'swing': 9},
         '2-step':            {'intensity': 4, 'euphoria': 6, 'space': 5, 'pulse': 2, 'chaos': 4, 'swing': 10},
         'melodic bass':      {'intensity': 6, 'euphoria': 9, 'space': 8, 'pulse': 3, 'chaos': 4, 'swing': 4},
         'glitchcore':        {'intensity': 8, 'euphoria': 7, 'space': 3, 'pulse': 4, 'chaos': 10,'swing': 3},
         'bass':              {'intensity': 7, 'euphoria': 5, 'space': 5, 'pulse': 4, 'chaos': 5, 'swing': 6},
-        'glitch':            {'intensity': 5, 'euphoria': 4, 'space': 4, 'pulse': 3, 'chaos': 9, 'swing': 5},
+        'glitch':            {'intensity': 7, 'euphoria': 4, 'space': 4, 'pulse': 3, 'chaos': 9, 'swing': 5},
 
         # --- PARENT: HARD DANCE / HARDCORE ---
         'hardstyle':         {'intensity': 9, 'euphoria': 7, 'space': 5, 'pulse': 9, 'chaos': 4, 'swing': 2},
@@ -149,23 +149,23 @@ class VibeClassifier:
         'hard dance':        {'intensity': 9, 'euphoria': 6, 'space': 4, 'pulse': 9, 'chaos': 4, 'swing': 2},
 
         # --- PARENT: DOWNTEMPO / EXPERIMENTAL ---
-        'downtempo':         {'intensity': 2, 'euphoria': 6, 'space': 7, 'pulse': 4, 'chaos': 2, 'swing': 6},
-        'idm':               {'intensity': 4, 'euphoria': 4, 'space': 6, 'pulse': 2, 'chaos': 10,'swing': 4},
-        'trip-hop':          {'intensity': 3, 'euphoria': 4, 'space': 6, 'pulse': 4, 'chaos': 3, 'swing': 8},
+        'downtempo':         {'intensity': 2, 'euphoria': 6, 'space': 10, 'pulse': 4, 'chaos': 2, 'swing': 6},
+        'idm':               {'intensity': 4, 'euphoria': 4, 'space': 7, 'pulse': 2, 'chaos': 10,'swing': 4},
+        'trip-hop':          {'intensity': 3, 'euphoria': 4, 'space': 7, 'pulse': 4, 'chaos': 3, 'swing': 8},
         'chillstep':         {'intensity': 3, 'euphoria': 7, 'space': 9, 'pulse': 2, 'chaos': 2, 'swing': 4},
         'psydub':            {'intensity': 4, 'euphoria': 6, 'space': 8, 'pulse': 3, 'chaos': 5, 'swing': 6},
-        'vaporwave':         {'intensity': 2, 'euphoria': 6, 'space': 9, 'pulse': 5, 'chaos': 4, 'swing': 5},
+        'vaporwave':         {'intensity': 2, 'euphoria': 6, 'space': 9, 'pulse': 5, 'chaos': 2, 'swing': 5},
         'synthwave':         {'intensity': 5, 'euphoria': 7, 'space': 8, 'pulse': 7, 'chaos': 2, 'swing': 3},
         'illbient':          {'intensity': 4, 'euphoria': 2, 'space': 8, 'pulse': 2, 'chaos': 6, 'swing': 3},
         'ethereal':          {'intensity': 1, 'euphoria': 8, 'space': 10,'pulse': 1, 'chaos': 2, 'swing': 2},
 
         # --- MISC / HYBRID ---
-        'hyperpop':          {'intensity': 7, 'euphoria': 8, 'space': 4, 'pulse': 5, 'chaos': 9, 'swing': 4},
+        'hyperpop':          {'intensity': 10, 'euphoria': 10, 'space': 4, 'pulse': 5, 'chaos': 10, 'swing': 4},
         'eurodance':         {'intensity': 6, 'euphoria': 9, 'space': 5, 'pulse': 9, 'chaos': 2, 'swing': 4},
-        'complextro':        {'intensity': 8, 'euphoria': 7, 'space': 4, 'pulse': 8, 'chaos': 9, 'swing': 4},
-        'big room':          {'intensity': 8, 'euphoria': 6, 'space': 7, 'pulse': 9, 'chaos': 3, 'swing': 2},
-        'hardwell style':    {'intensity': 8, 'euphoria': 6, 'space': 7, 'pulse': 9, 'chaos': 3, 'swing': 3},
-        'phonk':             {'intensity': 7, 'euphoria': 3, 'space': 5, 'pulse': 4, 'chaos': 4, 'swing': 8},
+        'complextro':        {'intensity': 10, 'euphoria': 10, 'space': 4, 'pulse': 8, 'chaos': 10, 'swing': 4},
+        'big room':          {'intensity': 8, 'euphoria': 6, 'space': 8, 'pulse': 9, 'chaos': 3, 'swing': 2},
+        'hardwell style':    {'intensity': 8, 'euphoria': 6, 'space': 8, 'pulse': 9, 'chaos': 3, 'swing': 3},
+        'phonk':             {'intensity': 10, 'euphoria': 1, 'space': 5, 'pulse': 4, 'chaos': 5, 'swing': 8},
         'edm':               {'intensity': 7, 'euphoria': 7, 'space': 6, 'pulse': 8, 'chaos': 4, 'swing': 4},
         'electronic':        {'intensity': 5, 'euphoria': 5, 'space': 5, 'pulse': 5, 'chaos': 5, 'swing': 5},
         'breakbeat':         {'intensity': 6, 'euphoria': 5, 'space': 4, 'pulse': 2, 'chaos': 5, 'swing': 9}
