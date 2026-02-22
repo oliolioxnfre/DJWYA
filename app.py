@@ -3,6 +3,8 @@ import csv
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from classifier import GenreClassifier
+from classifier import VibeClassifier
 
 load_dotenv()
 
@@ -18,7 +20,10 @@ electronic_genres = [
     # --- PARENT: HOUSE ---
     'house', 'deep house', 'tech house', 'progressive house', 'future house', 
     'bass house', 'tropical house', 'electro house', 'acid house', 'g-house', 
-    'afro house', 'organic house', 'chicago house', 'disco house', 'nu-disco',
+    'afro house', 'organic house', 'chicago house', 'disco house', 'nu-disco', 
+    'lo-fi house', 'funky house', 'hard house', 'jazz house', 'rally house', 
+    'future funk', 'liquid funk', 'digicore', 'french house', 'chiptune', 'breakbeat',
+    'disco house', 'uk garage', 'melodic dubstep', 'funky house', 'garage',
 
     # --- PARENT: TECHNO ---
     'techno', 'minimal techno', 'hard techno', 'acid techno', 'dub techno', 
@@ -27,36 +32,33 @@ electronic_genres = [
 
     # --- PARENT: TRANCE ---
     'trance', 'uplifting trance', 'psytrance', 'progressive trance', 'goa trance', 
-    'vocal trance', 'tech trance', 'dream trance', 'hard trance',
+    'vocal trance', 'tech trance', 'dream trance', 'hard trance', 'hypertrance', 'neotrance',
 
     # --- PARENT: DRUM AND BASS ---
-    'drum and bass', 'liquid dnb', 'neurofunk', 'jump-up', 'jungle', 
-    'breakcore', 'halftime dnb', 'techstep', 'darkstep', 'atmospheric dnb',
+    'drum and bass', 'drum n bass', 'liquid dnb', 'neurofunk', 'jump-up', 'jungle', 
+    'breakcore', 'halftime dnb', 'techstep', 'darkstep', 'atmospheric dnb', 'dnb',
+
 
     # --- PARENT: BASS MUSIC & DUBSTEP ---
-    'dubstep', 'riddim', 'brostep', 'future bass', 'trap', 'wave', 
+    'dubstep', 'riddim', 'brostep', 'future bass', 'j-core', 'trap', 'wave', 
     'glitch hop', 'color bass', 'melodic dubstep', 'deathstep', 'uk garage', 
-    'speed garage', '2-step',
+    'speed garage', '2-step', 'melodic bass', 'glitchcore', 'bass', 'glitch',
 
     # --- PARENT: HARD DANCE / HARDCORE ---
     'hardstyle', 'euphoric hardstyle', 'rawstyle', 'gabber', 
     'happy hardcore', 'frenchcore', 'uptempo hardcore', 'hard dance',
 
     # --- PARENT: DOWNTEMPO / EXPERIMENTAL ---
-    'downtempo', 'ambient', 'idm', 'trip-hop', 'chillstep', 'psydub', 
-    'vaporwave', 'synthwave', 'illbient', 'ethereal',
+    'downtempo', 'idm', 'trip-hop', 'chillstep', 'psydub', 
+    'vaporwave', 'synthwave', 'illbient', 'ethereal', 'electronica', 'chillout', 
 
     # --- MISC / HYBRID ---
     'hyperpop', 'eurodance', 'complextro', 'big room', 'hardwell style', 
-    'phonk', 'edm', 'electronic'
+    'phonk', 'edm', 'electronic', 'breakbeat', 'synthpop', 'electropop',
+    'rave', 'rave techno',
 ]
 
-no_exception_genres = [
-    'rap', 'hip hop', 'r&b', 'soul', 'blues', 'rock', 
-    'metal', 'punk', 'country', 'folk', 'reggae', 'latin', 'world', 'classical', 
-    'soundtrack', 'gospel', 'pop', 'indie', 'pop rock', 'pop punk', 'pop metal',
-    'emo', 'post-punk', 'post-rock', 'shoegaze', 'slowcore', '90s emo', 'hardcore'
-]
+
 
 # Initialize the network
 network = pylast.LastFMNetwork(api_key=LASTFM_API_KEY, api_secret=LASTFM_API_SECRET)
@@ -78,17 +80,8 @@ def get_artist_genres(artist_name):
         artist_genre_cache[artist_name] = [] # Cache empty to prevent retrying failures
         return []
 
-# returns true if the artist has any electronic genres
-def is_artist_electronic(artist_name):
-    genres = get_artist_genres(artist_name)
-    return any(genre in electronic_genres for genre in genres)
-
-def has_denied_genres(artist_name):
-    genres = get_artist_genres(artist_name)
-    return any(genre in no_exception_genres for genre in genres)
-    
-
-
+def get_electronic_genres(genres):
+    return [genre for genre in genres if genre in electronic_genres]
 
 
 #--------------------------------Local CSV Integration --------------------------------------
@@ -96,7 +89,7 @@ def has_denied_genres(artist_name):
 electronic_artists = {}
 
 try:
-    with open("liked_songs/liked_songs.csv", mode='r', encoding='utf-8') as file:
+    with open("liked_songs/tenth_songs.csv", mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         
         print("Parsing Local Liked Songs CSV...")
@@ -104,35 +97,52 @@ try:
         # We iterate over every row in the liked songs csv
         for row in reader:
             raw_artists = row.get("Artist Name(s)", "")
+            csv_genres_raw = row.get("Genres", "")
             
             # 1. Properly split the artists since some tracks have multiple artists separated by ';'
             track_artists = [a.strip() for a in raw_artists.split(';') if a.strip()]
             
-            # Check if ANY artist on the track is electronic
-            is_electronic_track = False
+            csv_genres_list = []
+            if csv_genres_raw:
+                csv_genres_list = [g.strip().lower() for g in csv_genres_raw.split(',') if g.strip()]
+            
+            # We iterate over every artist on the track independently
             for artist_name in track_artists:
-                # Cache lookup or Last.fm call
-                if artist_name in electronic_artists or is_artist_electronic(artist_name):
-                    is_electronic_track = True
-                    break
+                # 1. If we already validated them previously, just increment
+                if artist_name in electronic_artists:
+                    electronic_artists[artist_name]["count"] += 1
+                    continue
+                
+                # 2. They are new. Fetch their raw Last.fm genres.
+                lastfm_genres = get_artist_genres(artist_name)
+                
+                # 3. Check if Last.fm yielded any electronic genres
+                electronic_matches = get_electronic_genres(lastfm_genres)
+                
+                if electronic_matches:
+                    # They have electronic Last.fm tags, add them!
+                    electronic_artists[artist_name] = {
+                        "name": artist_name,
+                        "count": 1,
+                        "genres": lastfm_genres,
+                        "vibe_bucket": GenreClassifier.classify(lastfm_genres),
+                        "sonic_dna": VibeClassifier.get_artist_vibe(lastfm_genres)
+                    }
+                else:
+                    # 4. No electronic Last.fm tags found. Do the CSV track tags contain any?
+                    csv_electronic_matches = get_electronic_genres(csv_genres_list)
                     
-            # If the track is electronic, add ALL its artists unless they are denied
-            if is_electronic_track:
-                for artist_name in track_artists:
-                    if artist_name in electronic_artists:
-                        electronic_artists[artist_name]["count"] += 1
-                    else:
-                        _is_electronic = is_artist_electronic(artist_name)
-                        _has_denied = has_denied_genres(artist_name)
-                        
-                        # They get in if they have electronic tags OR if they don't have denied tags
-                        if _is_electronic or not _has_denied:
-                            electronic_artists[artist_name] = {
-                                "name": artist_name,
-                                "count": 1,
-                                "genres": get_artist_genres(artist_name)
-                            }
-                        
+                    if csv_electronic_matches:
+                        # The track ITSELF is electronic. Assign the track's CSV tags to the artist.
+                        electronic_artists[artist_name] = {
+                            "name": artist_name,
+                            "count": 1,
+                            "genres": csv_genres_list, # They inherit the track's full tags
+                            "vibe_bucket": GenreClassifier.classify(csv_genres_list),
+                            "sonic_dna": VibeClassifier.get_artist_vibe(csv_genres_list)
+                        }
+                    # 5. If STILL no (meaning Last.fm isn't electronic AND track isn't electronic),
+                    # they are completely skipped! (e.g. an unrelated rap track)
             
 except FileNotFoundError:
     print("Could not find liked_songs/liked_songs.csv")
@@ -204,14 +214,16 @@ def print_match_scores():
 
 supabase: Client = create_client(url, key)
 
-def sync_to_supabase(artist_list, user_id="demo_user"):
-    for item in artist_list:
+def sync_to_supabase(artist_dict, user_id="demo_user"):
+    for item in artist_dict.values():
         name_slug = item['name'].lower().replace(" ", "-")
         # --- PART A: Update the Global Artist Dictionary ---
         artist_metadata = {
             "name": item['name'],
             "name_slug": name_slug,
-            "genres": item.get('genres', [])
+            "genres": item.get('genres', []),
+            "vibe_bucket": item.get('vibe_bucket', []),
+            "sonic_dna": item.get('sonic_dna', {})
         }
         
         # Check if artist already exists to get their UUID
@@ -219,6 +231,8 @@ def sync_to_supabase(artist_list, user_id="demo_user"):
         
         if existing_artist.data and len(existing_artist.data) > 0:
             artist_id = existing_artist.data[0]['id']
+            # Update the existing artist with the new classification metrics
+            supabase.table("artists").update(artist_metadata).eq("id", artist_id).execute()
         else:
             # Insert new artist and get the generated UUID
             inserted_artist = supabase.table("artists").insert(artist_metadata).execute()
@@ -243,5 +257,5 @@ def sync_to_supabase(artist_list, user_id="demo_user"):
         print(f"Synced {item['name']} to your cloud library.")
 
 # RUN IT
-sync_to_supabase(electronic_artists.values())
+sync_to_supabase(electronic_artists)
         

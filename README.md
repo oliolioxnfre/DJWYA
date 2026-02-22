@@ -5,3 +5,6 @@ Install the dependencies
 supabase pylast spotipy python-dotenv
 
 Notes to self: source bin/activate, ./bin/pip install -r requirements.txt
+
+To add:
+LASTFM fallback to song genres
