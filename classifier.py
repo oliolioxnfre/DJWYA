@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
 class GenreClassifier:
     BUCKET_MAP = {
     "house": [
@@ -252,4 +256,59 @@ class VibeClassifier:
         return {k: round(v, 1) for k, v in avg_vibe.items()}
 
 
+    @classmethod
+    def update_user_dna(cls, user_id):
+        load_dotenv()
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_KEY")
+        supabase: Client = create_client(url, key)
+        """Queries the user_lib table joined with artists to get play counts and sonic_dna."""
+        print(f"Fetching sonic DNA and play counts for {user_id}...")
+        # We ask for the user_lib row, but ALSO tell Supabase 
+        # to look up the name and sonic_dna from the artists table.
+        response = supabase.table("user_lib").select("count, artists(name, sonic_dna)").eq("user_id", user_id).execute()
+        artist_data_list = []
+        for row in response.data:
+            play_count = row.get("count", 1)
+            artist_info = row.get('artists')
+            if not artist_info:
+                continue
+                
+            dna = artist_info.get("sonic_dna")
+            name = artist_info.get("name", "Unknown Artist")
+            
+            if dna and isinstance(dna, dict):
+                # Only add if it has all the standard categories
+                categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing']
+                if all(cat in dna for cat in categories):
+                    artist_data_list.append({
+                        'name': name,
+                        'dna': dna,
+                        'count': play_count
+                    })
         
+        # Calculate the user's DNA
+        user_dna = cls.calculate_user_dna(artist_data_list)
+        
+        # Update the user's DNA in the database
+        supabase.table("public.users").update({"sonic_dna": user_dna}).eq("id", user_id).execute()
+        return artist_data_list
+
+
+
+    @classmethod
+    def calculate_user_dna(cls, artist_data_list):
+        """Calculates a weighted average DNA for the user based on artist DNA and play counts."""
+        if not artist_data_list:
+            return {'intensity': 0, 'euphoria': 0, 'space': 0, 'pulse': 0, 'chaos': 0, 'swing': 0}
+            
+        categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing']
+        total_play_count = sum(item['count'] for item in artist_data_list)
+        
+        user_dna = {cat: 0.0 for cat in categories}
+        for item in artist_data_list:
+            weight = item['count'] / total_play_count
+            for cat in categories:
+                user_dna[cat] += item['dna'][cat] * weight
+                
+        return {cat: round(val, 1) for cat, val in user_dna.items()}

@@ -297,6 +297,7 @@ def sync_to_supabase(artist_dict, user_id):
         supabase.table("user_lib").upsert(library_data, on_conflict="user_id,artist_id").execute()
         
         print(f"Synced {item['name']} to your cloud library.")
-
+    VibeClassifier.update_user_dna(resolved_user_id)
 # RUN IT
 sync_to_supabase(electronic_artists, resolved_user_id)
+
