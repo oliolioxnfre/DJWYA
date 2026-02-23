@@ -35,6 +35,14 @@ def visualize_vibes(artist_data_list, user_id="demo_user"):
     for cat in categories:
         avg_dna[cat] /= total_plays
 
+    # --- RELATIVE NORMALIZATION ---
+    # Because averages flatten the shape, we scale the entire graph so the highest peak hits 10.
+    current_max = max(avg_dna.values())
+    if current_max > 0:
+        scaler = 10.0 / current_max
+        for cat in categories:
+            avg_dna[cat] *= scaler
+
     # Plotly requires the first category to be repeated at the end to close the loop
     values = [avg_dna[cat] for cat in categories]
     values.append(values[0])
@@ -44,19 +52,54 @@ def visualize_vibes(artist_data_list, user_id="demo_user"):
         r=values,
         theta=display_cats,
         fill='toself',
-        name=f"Average ({len(artist_data_list)} Artists, {total_plays} Plays)",
+        name=f"Scaled Average ({len(artist_data_list)} Artists, {total_plays} Plays)",
+        fillcolor='rgba(255, 75, 75, 0.5)', # Vibrant red fill
+        line=dict(color='rgba(255, 75, 75, 1.0)'),
         opacity=0.7
     ))
+
+    # --- OUTER BOUNDARY ---
+    # Draw a line connecting all the outer points for visual reference
+    fig.add_trace(go.Scatterpolar(
+        r=[10, 10, 10, 10, 10, 10, 10], 
+        theta=display_cats,
+        mode='lines',
+        name="Max Potential",
+        line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'),
+    ))
+
+    # --- OUTER COMPLETE GRAPH (K6) ---
+    # Connect every vertex to every other vertex for a "complete graph" aesthetic at the max level
+    for i in range(len(categories)):
+        for j in range(i + 1, len(categories)):
+            fig.add_trace(go.Scatterpolar(
+                r=[10, 10],
+                theta=[categories[i], categories[j]],
+                mode='lines',
+                line=dict(color='rgba(200, 200, 200, 0.3)', width=1),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
 
     fig.update_layout(
         polar=dict(
             gridshape='linear',
             radialaxis=dict(
                 visible=True,
-                range=[0, 10]  # Fixed scale 0-10
-            )),
+                range=[0, 10],
+                gridcolor='rgba(255, 255, 255, 0.1)',
+            ),
+            angularaxis=dict(
+                gridcolor='rgba(255, 255, 255, 0.1)',
+                linecolor='rgba(255, 255, 255, 0.2)'
+            ),
+            bgcolor='rgba(0,0,0,0)'
+        ),
         showlegend=True,
-        title="Average Sonic DNA Profile"
+        title="Average Sonic DNA Profile (Normalized & Scaled)",
+        template="plotly_dark",
+        paper_bgcolor='rgba(15, 15, 15, 1)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
 
     fig.show()

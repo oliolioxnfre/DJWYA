@@ -82,7 +82,7 @@ class VibeClassifier:
         'hard-house':        {'intensity': 8, 'euphoria': 6, 'space': 3, 'pulse': 9, 'chaos': 4, 'swing': 5},
         'jazz-house':        {'intensity': 3, 'euphoria': 7, 'space': 6, 'pulse': 6, 'chaos': 4, 'swing': 9},
         'rally-house':       {'intensity': 7, 'euphoria': 6, 'space': 4, 'pulse': 8, 'chaos': 4, 'swing': 6},
-        'witch-house':       {'intensity': 8, 'euphoria': 8, 'space': 8, 'pulse': 5, 'chaos': 4, 'swing': 6},
+        'witch-house':       {'intensity': 9, 'euphoria': 8, 'space': 8, 'pulse': 5, 'chaos': 4, 'swing': 6},
         # --- PARENT: TECHNO ---
         'techno':            {'intensity': 7, 'euphoria': 4, 'space': 6, 'pulse': 10, 'chaos': 2, 'swing': 1},
         'minimal-techno':    {'intensity': 4, 'euphoria': 3, 'space': 9, 'pulse': 9,  'chaos': 2, 'swing': 2},
@@ -166,13 +166,13 @@ class VibeClassifier:
         'complextro':        {'intensity': 10, 'euphoria': 10, 'space': 4, 'pulse': 8, 'chaos': 10, 'swing': 4},
         'big-room':          {'intensity': 8, 'euphoria': 6, 'space': 8, 'pulse': 9, 'chaos': 3, 'swing': 2},
         'hardwell-style':    {'intensity': 8, 'euphoria': 6, 'space': 8, 'pulse': 9, 'chaos': 3, 'swing': 3},
-        'phonk':             {'intensity': 10, 'euphoria': 1, 'space': 5, 'pulse': 4, 'chaos': 5, 'swing': 8},
+        'phonk':             {'intensity': 10, 'euphoria': 1, 'space': 0, 'pulse': 4, 'chaos': 5, 'swing': 8},
         'edm':               {'intensity': 7, 'euphoria': 7, 'space': 6, 'pulse': 8, 'chaos': 4, 'swing': 4},
         'breakbeat':         {'intensity': 6, 'euphoria': 5, 'space': 4, 'pulse': 2, 'chaos': 5, 'swing': 9}
     }
 
     # High-level "umbrella" genres that skew data if combined with specific subgenres
-    GENERIC_GENRES = {'electronic', 'edm', 'house', 'techno', 'trance', 'dance'}
+    GENERIC_GENRES = {'electronic', 'edm', 'house', 'techno', 'trance', 'dance', 'electronica', }
 
     @classmethod
     def get_artist_vibe(cls, genres):
