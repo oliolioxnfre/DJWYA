@@ -4,9 +4,9 @@ import pandas as pd
 # Assuming your VibeClassifier class is in the same file or imported
 # from classifier import VibeClassifier
 
-def visualize_vibes(artist_data_list):
+def visualize_vibes(artist_data_list, user_id="demo_user"):
     """
-    artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}}]
+    artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}, 'count': 5}]
     """
     if not artist_data_list:
         print("No artist data provided to visualize.")
@@ -19,17 +19,21 @@ def visualize_vibes(artist_data_list):
     
     # Init average dict
     avg_dna = {cat: 0.0 for cat in categories}
-    num_artists = len(artist_data_list)
+    total_plays = sum(artist.get('count', 1) for artist in artist_data_list)
+    
+    if total_plays == 0:
+        total_plays = 1
 
-    # Sum all the values
+    # Sum all the values weighted by play count
     for artist in artist_data_list:
         dna = artist['dna']
+        count = artist.get('count', 1)
         for cat in categories:
-            avg_dna[cat] += float(dna.get(cat, 0.0))
+            avg_dna[cat] += float(dna.get(cat, 0.0)) * count
             
-    # Divide to get averages
+    # Divide to get weighted averages
     for cat in categories:
-        avg_dna[cat] /= num_artists
+        avg_dna[cat] /= total_plays
 
     # Plotly requires the first category to be repeated at the end to close the loop
     values = [avg_dna[cat] for cat in categories]
@@ -40,7 +44,7 @@ def visualize_vibes(artist_data_list):
         r=values,
         theta=display_cats,
         fill='toself',
-        name=f"Average ({num_artists} Artists)",
+        name=f"Average ({len(artist_data_list)} Artists, {total_plays} Plays)",
         opacity=0.7
     ))
 
@@ -67,16 +71,23 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-def fetch_all_artist_dna():
-    """Queries the artists table for all artists that have sonic_dna attached."""
-    print("Fetching sonic DNA from library...")
-    response = supabase.table("artists").select("name, sonic_dna").not_.is_("sonic_dna", "null").execute()
+def fetch_all_artist_dna(user_id="demo_user"):
+    """Queries the user_lib table joined with artists to get play counts and sonic_dna."""
+    print(f"Fetching sonic DNA and play counts for {user_id}...")
+    
+    # We ask for the user_lib row, but ALSO tell Supabase 
+    # to look up the name and sonic_dna from the artists table.
+    response = supabase.table("user_lib").select("count, artists(name, sonic_dna)").eq("user_id", user_id).execute()
     
     artist_data_list = []
     for row in response.data:
-        # Validate that the dna is a dictionary with all required keys
-        dna = row.get("sonic_dna")
-        name = row.get("name", "Unknown Artist")
+        play_count = row.get("count", 1)
+        artist_info = row.get('artists')
+        if not artist_info:
+            continue
+            
+        dna = artist_info.get("sonic_dna")
+        name = artist_info.get("name", "Unknown Artist")
         
         if dna and isinstance(dna, dict):
             # Only add if it has all the standard categories
@@ -84,7 +95,8 @@ def fetch_all_artist_dna():
             if all(cat in dna for cat in categories):
                 artist_data_list.append({
                     'name': name,
-                    'dna': dna
+                    'dna': dna,
+                    'count': play_count
                 })
                 
     return artist_data_list

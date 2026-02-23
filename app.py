@@ -18,44 +18,44 @@ key = os.environ.get("SUPABASE_KEY")
 
 electronic_genres = [
     # --- PARENT: HOUSE ---
-    'house', 'deep house', 'tech house', 'progressive house', 'future house', 
-    'bass house', 'tropical house', 'electro house', 'acid house', 'g-house', 
-    'afro house', 'organic house', 'chicago house', 'disco house', 'nu-disco', 
-    'lo-fi house', 'funky house', 'hard house', 'jazz house', 'rally house', 
-    'future funk', 'liquid funk', 'digicore', 'french house', 'chiptune', 'breakbeat',
-    'disco house', 'uk garage', 'melodic dubstep', 'funky house', 'garage',
+    'house', 'deep-house', 'tech-house', 'progressive-house', 'future-house', 
+    'bass-house', 'tropical-house', 'electro-house', 'acid-house', 'g-house', 
+    'afro-house', 'organic-house', 'chicago-house', 'disco-house', 'nu-disco', 
+    'lo-fi-house', 'funky-house', 'hard-house', 'jazz-house', 'rally-house', 
+    'future-funk', 'liquid-funk', 'digicore', 'french-house', 'chiptune', 'breakbeat',
+    'disco-house', 'uk-garage', 'melodic-dubstep', 'funky-house', 'garage',
 
     # --- PARENT: TECHNO ---
-    'techno', 'minimal techno', 'hard techno', 'acid techno', 'dub techno', 
-    'detroit techno', 'peak time techno', 'industrial techno', 'melodic techno', 
-    'dark techno', 'hypnotic techno',
+    'techno', 'minimal-techno', 'hard-techno', 'acid-techno', 'dub-techno', 
+    'detroit-techno', 'peak-time-techno', 'industrial-techno', 'melodic-techno', 
+    'dark-techno', 'hypnotic-techno',
 
     # --- PARENT: TRANCE ---
-    'trance', 'uplifting trance', 'psytrance', 'progressive trance', 'goa trance', 
-    'vocal trance', 'tech trance', 'dream trance', 'hard trance', 'hypertrance', 'neotrance',
+    'trance', 'uplifting-trance', 'psytrance', 'progressive-trance', 'goa-trance', 
+    'vocal-trance', 'tech-trance', 'dream-trance', 'hard-trance', 'hypertrance', 'neotrance',
 
     # --- PARENT: DRUM AND BASS ---
-    'drum and bass', 'drum n bass', 'liquid dnb', 'neurofunk', 'jump-up', 'jungle', 
-    'breakcore', 'halftime dnb', 'techstep', 'darkstep', 'atmospheric dnb', 'dnb',
+    'drum-and-bass', 'drum-n-bass', 'liquid-dnb', 'neurofunk', 'jump-up', 'jungle', 
+    'breakcore', 'halftime-dnb', 'techstep', 'darkstep', 'atmospheric-dnb', 'dnb',
 
 
     # --- PARENT: BASS MUSIC & DUBSTEP ---
-    'dubstep', 'riddim', 'brostep', 'future bass', 'j-core', 'trap', 'wave', 
-    'glitch hop', 'color bass', 'melodic dubstep', 'deathstep', 'uk garage', 
-    'speed garage', '2-step', 'melodic bass', 'glitchcore', 'bass', 'glitch',
+    'dubstep', 'riddim', 'brostep', 'future-bass', 'j-core', 'trap', 'wave', 
+    'glitch-hop', 'color-bass', 'melodic-dubstep', 'deathstep', 'uk-garage', 
+    'speed-garage', '2-step', 'melodic-bass', 'glitchcore', 'bass', 'glitch',
 
     # --- PARENT: HARD DANCE / HARDCORE ---
-    'hardstyle', 'euphoric hardstyle', 'rawstyle', 'gabber', 
-    'happy hardcore', 'frenchcore', 'uptempo hardcore', 'hard dance',
+    'hardstyle', 'euphoric-hardstyle', 'rawstyle', 'gabber', 
+    'happy-hardcore', 'frenchcore', 'uptempo-hardcore', 'hard-dance',
 
     # --- PARENT: DOWNTEMPO / EXPERIMENTAL ---
     'downtempo', 'idm', 'trip-hop', 'chillstep', 'psydub', 
     'vaporwave', 'synthwave', 'illbient', 'ethereal', 'electronica', 'chillout', 
 
     # --- MISC / HYBRID ---
-    'hyperpop', 'eurodance', 'complextro', 'big room', 'hardwell style', 
+    'hyperpop', 'eurodance', 'complextro', 'big-room', 'hardwell-style', 
     'phonk', 'edm', 'electronic', 'breakbeat', 'synthpop', 'electropop',
-    'rave', 'rave techno',
+    'rave', 'rave-techno',
 ]
 
 
@@ -73,7 +73,8 @@ def get_artist_genres(artist_name):
     try:
         artist = network.get_artist(artist_name)
         top_tags = artist.get_top_tags(limit=7)
-        genres = [tag.item.get_name().lower() for tag in top_tags]
+        # Lowercase and replace spaces with dashes for normalization
+        genres = [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
         artist_genre_cache[artist_name] = genres
         return genres
     except Exception as e:
@@ -104,7 +105,8 @@ try:
             
             csv_genres_list = []
             if csv_genres_raw:
-                csv_genres_list = [g.strip().lower() for g in csv_genres_raw.split(',') if g.strip()]
+                # Replace spaces with dashes for normalization
+                csv_genres_list = [g.strip().lower().replace(" ", "-") for g in csv_genres_raw.split(',') if g.strip()]
             
             # We iterate over every artist on the track independently
             for artist_name in track_artists:
