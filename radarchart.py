@@ -4,7 +4,7 @@ import pandas as pd
 # Assuming your VibeClassifier class is in the same file or imported
 # from classifier import VibeClassifier
 
-def visualize_vibes(artist_data_list, user_id="demo_user"):
+def visualize_vibes(artist_data_list, user_id="db65253d-6643-4607-8988-7770f0193a13"):
     """
     artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}, 'count': 5}]
     """
@@ -114,7 +114,7 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-def fetch_all_artist_dna(user_id="demo_user"):
+def fetch_all_artist_dna(user_id="db65253d-6643-4607-8988-7770f0193a13"):
     """Queries the user_lib table joined with artists to get play counts and sonic_dna."""
     print(f"Fetching sonic DNA and play counts for {user_id}...")
     

@@ -22,39 +22,46 @@ electronic_genres = [
     'bass-house', 'tropical-house', 'electro-house', 'acid-house', 'g-house', 
     'afro-house', 'organic-house', 'chicago-house', 'disco-house', 'nu-disco', 
     'lo-fi-house', 'funky-house', 'hard-house', 'jazz-house', 'rally-house', 
+    'melodic-house', 'speed-house', 'ghetto-house', 'witch-house',
     'future-funk', 'liquid-funk', 'digicore', 'french-house', 'chiptune', 'breakbeat',
-    'disco-house', 'uk-garage', 'melodic-dubstep', 'funky-house', 'garage',
+    'uk-garage', 'melodic-dubstep', 'garage',
 
     # --- PARENT: TECHNO ---
     'techno', 'minimal-techno', 'hard-techno', 'acid-techno', 'dub-techno', 
     'detroit-techno', 'peak-time-techno', 'industrial-techno', 'melodic-techno', 
-    'dark-techno', 'hypnotic-techno',
+    'dark-techno', 'hypnotic-techno', 'cyber-house',
 
     # --- PARENT: TRANCE ---
     'trance', 'uplifting-trance', 'psytrance', 'progressive-trance', 'goa-trance', 
-    'vocal-trance', 'tech-trance', 'dream-trance', 'hard-trance', 'hypertrance', 'neotrance',
+    'vocal-trance', 'tech-trance', 'dream-trance', 'hard-trance', 'hypertrance', 
+    'neotrance', 'acid-trance',
 
     # --- PARENT: DRUM AND BASS ---
     'drum-and-bass', 'drum-n-bass', 'liquid-dnb', 'neurofunk', 'jump-up', 'jungle', 
     'breakcore', 'halftime-dnb', 'techstep', 'darkstep', 'atmospheric-dnb', 'dnb',
-
+    'atmospheric-jungle',
 
     # --- PARENT: BASS MUSIC & DUBSTEP ---
     'dubstep', 'riddim', 'brostep', 'future-bass', 'j-core', 'trap', 'wave', 
     'glitch-hop', 'color-bass', 'melodic-dubstep', 'deathstep', 'uk-garage', 
     'speed-garage', '2-step', 'melodic-bass', 'glitchcore', 'bass', 'glitch',
+    'moombahton', 'midtempo-bass', 'hardwave', 'drift-phonk', 'juke', 'footwork',
+    'grime', 'dub',
 
     # --- PARENT: HARD DANCE / HARDCORE ---
     'hardstyle', 'euphoric-hardstyle', 'rawstyle', 'gabber', 
     'happy-hardcore', 'frenchcore', 'uptempo-hardcore', 'hard-dance',
+    'hard-bass', 'donk', 'bounce', 'scouse-house', 'nightcore',
 
     # --- PARENT: DOWNTEMPO / EXPERIMENTAL ---
     'downtempo', 'idm', 'trip-hop', 'chillstep', 'psydub', 
     'vaporwave', 'synthwave', 'illbient', 'ethereal', 'electronica', 'chillout', 
+    'ambient', 'dream-pop', 'outrun', 'retrowave', 'chillsynth', 'musique-concrete',
+    'deconstructed-club',
 
     # --- MISC / HYBRID ---
     'hyperpop', 'eurodance', 'complextro', 'big-room', 'hardwell-style', 
-    'phonk', 'edm', 'electronic', 'breakbeat', 'synthpop', 'electropop',
+    'phonk', 'edm', 'electronic', 'synthpop', 'electropop',
     'rave', 'rave-techno',
 ]
 
@@ -85,12 +92,49 @@ def get_electronic_genres(genres):
     return [genre for genre in genres if genre in electronic_genres]
 
 
+#-------------------------------- CLI AUTH & SETUP --------------------------------------
+# Initialize Supabase first so we can verify the user before processing
+supabase: Client = create_client(url, key)
+resolved_user_id = None
+target_csv_file = None
+
+print(f"--- DJWYA App Sync ---")
+while True:
+    username = input("Enter your DJWYA username: ").strip()
+    if not username: continue
+    
+    response = supabase.table("public.users").select("id").eq("username", username).execute()
+    if not response.data:
+        print(f"❌ User '{username}' not found in Supabase. Please try again or create them in user.py")
+        continue
+        
+    resolved_user_id = response.data[0]['id']
+    print(f"✅ Welcome back, {username}!\n")
+    break
+    
+while True:
+    file_input = input("Enter the name of your liked songs CSV file (e.g. Max_Songs): ").strip()
+    if not file_input: continue
+    
+    # Append .csv if the user didn't type it
+    if not file_input.lower().endswith('.csv'):
+        file_input += '.csv'
+        
+    target_csv_file = f"liked_songs/{file_input}"
+    if not os.path.exists(target_csv_file):
+        print(f"❌ Could not find file at '{target_csv_file}'. Please check the name and try again.")
+        continue
+        
+    print(f"✅ Found {target_csv_file}. Starting analysis...\n")
+    break
+
+
 #--------------------------------Local CSV Integration --------------------------------------
 
 electronic_artists = {}
 
 try:
-    with open("liked_songs/complextro.csv", mode='r', encoding='utf-8') as file:
+    with open(target_csv_file, mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         
         print("Parsing Local Liked Songs CSV...")
@@ -211,13 +255,8 @@ def print_match_scores():
 #print(str(is_artist_electronic("swedm®")))
 """
 #--------------------------------Supabase Integration --------------------------------------
- 
 
-
-
-supabase: Client = create_client(url, key)
-
-def sync_to_supabase(artist_dict, user_id="demo_user"):
+def sync_to_supabase(artist_dict, user_id):
     for item in artist_dict.values():
         name_slug = item['name'].lower().replace(" ", "-")
         # --- PART A: Update the Global Artist Dictionary ---
@@ -260,5 +299,4 @@ def sync_to_supabase(artist_dict, user_id="demo_user"):
         print(f"Synced {item['name']} to your cloud library.")
 
 # RUN IT
-sync_to_supabase(electronic_artists)
-        
+sync_to_supabase(electronic_artists, resolved_user_id)

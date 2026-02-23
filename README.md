@@ -6,13 +6,29 @@ supabase pylast spotipy python-dotenv
 
 Notes to self: source bin/activate, ./bin/pip install -r requirements.txt
 
-To add:
-Context (complextro.csv) (Mewnlight Rose)
-1) For starters gotta fix the my main CSV filing loop. Theres a massive technical bug that is causing failures in artist lookups to LAST.FM causing a default fallback to the genres in the playlist CSV. For example, Mewnlight Rose is auto fallbacking to the csv file's genre "happy hardcore" 
-2) Even though artists like Mewnlight Rose are categorized as "happy hardcore" in the csv" the database filing loop specfically the DNA mapping is mapping the incorrect DNA rankings for HAPPY HARDCORE.
+To do:
+Finish classifer table of genres
+    Add like 40 more genres
+    Tweak each one
+    Make each ones vibe more extreme to skew graph
+Add multiple users to Database
+    Start by making user table in database
+Add compare.py logic ultimate score 
+    Add the "Master Tally" Algorithm
 
-Exemplified) Mewnlight Rose is (electro house, happy hardcore, uk hardcore, dubstep, colour bass) on LAST.FM -> Database Mewnlight Rose is (happy hardcore)
-happy hardcore is listed in the classifier as 
-{'intensity': 8, 'euphoria': 10,'space': 5, 'pulse': 9, 'chaos': 4, 'swing': 3},
-but in the DB is mapped as 
-{"chaos": 4.8, "pulse": 8.2, "space": 4.5, "swing": 4.8, "euphoria": 5.5, "intensity": 6.8}
+Find a way to automate festival playlists
+    Idea 1: Manually Scrape playlists 💩
+    Idea 2: Use EDMTRAIN api to give moltbot instructions of which playlists to scrape
+    Idea 3: Use EDMTRAIN api to find festivals and then use moltbot to scrape each poster
+
+Website:
+    Make Homepage
+    Make signin
+    Make upload csv
+    Results page
+    Add user radar chart
+    Add festival radar char
+
+General future:
+    Multithreaded sync
+    Multithreaded api calls
