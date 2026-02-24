@@ -3,7 +3,7 @@ import csv
 import glob
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from artists_categorize import categorize_artist, sync_artists_to_supabase
+from artists_categorize import categorize_artist, bulk_categorize_artists, sync_artists_to_supabase
 
 load_dotenv()
 
@@ -46,14 +46,14 @@ def aggregate_csv_festivals():
         artists_list = list(unique_artists)
         print(f"\n[{festival_name}] Found {len(artists_list)} unique artists.")
         
-        # Phase 1: Categorize all artists
-        print(f"[{festival_name}] Categorizing artists from Last.fm...")
-        festival_artists_dict = {}
-        for artist_name in artists_list:
-            # We don't filter out non-electronic genres because these are electronic festivals
-            categorized = categorize_artist(artist_name, fallback_genres=[], filter_electronic=False)
-            if categorized:
-                festival_artists_dict[artist_name] = categorized
+        # Phase 1: Categorize all artists (Using optimized bulk lookup)
+        print(f"[{festival_name}] Categorizing artists...")
+        
+        # Prepare requests: (name, fallback_genres, filter_electronic)
+        # We set filter_electronic=False for festival lineups
+        requests = [(name, [], False) for name in artists_list]
+        
+        festival_artists_dict = bulk_categorize_artists(requests, supabase)
                 
         # Phase 2: Sync to artists database
         print(f"[{festival_name}] Syncing {len(festival_artists_dict)} artists to Supabase 'artists' table...")

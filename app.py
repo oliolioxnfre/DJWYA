@@ -64,7 +64,7 @@ def add_playlist(user_id):
 
         if artist_requests:
             print(f"🧵 Fetching genres for {len(artist_requests)} unique artists concurrently...")
-            bulk_results = bulk_categorize_artists(artist_requests)
+            bulk_results = bulk_categorize_artists(artist_requests, supabase)
             
             final_artists = {}
             for name, categorized in bulk_results.items():

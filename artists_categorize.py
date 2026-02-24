@@ -83,11 +83,41 @@ def get_artist_genres(artist_name):
         artist_genre_cache[artist_name] = [] # Cache empty to prevent retrying failures
         return []
 
-def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True):
+def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True, existing_data=None, supabase_client=None):
     """
     Fetches genres, categorizes them, and builds the artist metadata dict.
     If filter_electronic is False, it includes the artist regardless of genre.
+    If existing_data or supabase_client is provided, it checks the DB first to skip Last.fm.
     """
+    # 1. Check existing_data if provided by bulk process
+    # 2. Otherwise, check Supabase directly if client provided
+    if not existing_data and supabase_client:
+        slug = artist_name.lower().replace(" ", "-")
+        try:
+            res = supabase_client.table("artists").select("*").eq("name_slug", slug).execute()
+            if res.data:
+                existing_data = res.data[0]
+        except Exception:
+            pass # Fall back to Last.fm if DB fails
+
+    if existing_data:
+        # Use existing data from DB
+        genres = existing_data.get('genres', [])
+        
+        # We still need to respect the electronic filter even if they are in the DB
+        if filter_electronic:
+            electronic_matches = get_electronic_genres(genres)
+            if not electronic_matches:
+                return None
+                
+        return {
+            "name": existing_data.get('name', artist_name),
+            "genres": genres,
+            "vibe_bucket": existing_data.get('vibe_bucket', []),
+            "sonic_dna": existing_data.get('sonic_dna', {})
+        }
+
+    # Otherwise, proceed with Last.fm API logic
     lastfm_genres = get_artist_genres(artist_name)
     
     if not filter_electronic:
@@ -122,18 +152,45 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True)
 
 def _categorize_worker(args):
     """Worker function for unpacking args into categorize_artist."""
-    artist_name, fallback_genres, filter_electronic = args
-    return categorize_artist(artist_name, fallback_genres, filter_electronic)
+    artist_name, fallback_genres, filter_electronic, existing_data = args
+    return categorize_artist(artist_name, fallback_genres, filter_electronic, existing_data)
 
-def bulk_categorize_artists(artist_requests, max_workers=10):
+def bulk_categorize_artists(artist_requests, supabase_client=None, max_workers=10):
     """
     Multithreaded generation of categorized artist dicts.
     artist_requests is a list of tuples: (artist_name, fallback_genres, filter_electronic)
+    If supabase_client is provided, it performs a batch lookup to avoid redundant API calls.
     """
+    # 1. First, do a bulk lookup of all artists in the Supabase DB
+    existing_map = {}
+    if supabase_client:
+        all_slugs = [name.lower().replace(" ", "-") for name, _, _ in artist_requests]
+        print(f"🔍 Checking Supabase for {len(all_slugs)} existing artists...")
+        
+        # Batch checks in chunks of 500
+        for i in range(0, len(all_slugs), 500):
+            batch_slugs = all_slugs[i:i+500]
+            try:
+                res = supabase_client.table("artists").select("*").in_("name_slug", batch_slugs).execute()
+                if res.data:
+                    for row in res.data:
+                        existing_map[row["name_slug"]] = row
+            except Exception as e:
+                print(f"⚠️ Warning: Bulk lookup failed: {e}")
+
+    # 2. Prepare requests for the worker (adding the existing data if found)
+    worker_requests = []
+    for name, fallback, filter_e in artist_requests:
+        slug = name.lower().replace(" ", "-")
+        existing_info = existing_map.get(slug)
+        worker_requests.append((name, fallback, filter_e, existing_info))
+
+    print(f"🧵 Parallel processing {len(worker_requests)} artists...")
+    
     results = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Map the worker over the requests
-        future_to_artist = {executor.submit(_categorize_worker, req): req[0] for req in artist_requests}
+        future_to_artist = {executor.submit(_categorize_worker, req): req[0] for req in worker_requests}
         for future in concurrent.futures.as_completed(future_to_artist):
             artist_name = future_to_artist[future]
             try:
