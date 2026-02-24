@@ -16,3 +16,4 @@ pyvenv.cfg
 .env
 .env.example
 /JsonTesting
+/shitbin
