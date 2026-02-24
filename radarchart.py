@@ -1,10 +1,20 @@
 import plotly.graph_objects as go
 import pandas as pd
+from classifier import VibeClassifier
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+load_dotenv()
+
+url = os.environ.get("SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
+
 
 # Assuming your VibeClassifier class is in the same file or imported
 # from classifier import VibeClassifier
 
-def visualize_vibes(artist_data_list, user_id="db65253d-6643-4607-8988-7770f0193a13"):
+def visualize_vibes(artist_data_list, user_id):
     """
     artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}, 'count': 5}]
     """
@@ -104,50 +114,19 @@ def visualize_vibes(artist_data_list, user_id="db65253d-6643-4607-8988-7770f0193
 
     fig.show()
 
-import os
-from dotenv import load_dotenv
-from supabase import create_client, Client
-
-# --- DB CONNECTION ---
-load_dotenv()
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
-
-def fetch_all_artist_dna(user_id="db65253d-6643-4607-8988-7770f0193a13"):
-    """Queries the user_lib table joined with artists to get play counts and sonic_dna."""
-    print(f"Fetching sonic DNA and play counts for {user_id}...")
-    
-    # We ask for the user_lib row, but ALSO tell Supabase 
-    # to look up the name and sonic_dna from the artists table.
-    response = supabase.table("user_lib").select("count, artists(name, sonic_dna)").eq("user_id", user_id).execute()
-    
-    artist_data_list = []
-    for row in response.data:
-        play_count = row.get("count", 1)
-        artist_info = row.get('artists')
-        if not artist_info:
-            continue
-            
-        dna = artist_info.get("sonic_dna")
-        name = artist_info.get("name", "Unknown Artist")
-        
-        if dna and isinstance(dna, dict):
-            # Only add if it has all the standard categories
-            categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing']
-            if all(cat in dna for cat in categories):
-                artist_data_list.append({
-                    'name': name,
-                    'dna': dna,
-                    'count': play_count
-                })
-                
-    return artist_data_list
+def fetch_user_dna(user_id):
+    supabase: Client = create_client(url, key)
+    res = supabase.table("public.users").select("sonic_dna").eq("id", user_id).execute()
+    if res.data and res.data[0].get('sonic_dna'):
+        return res.data[0]['sonic_dna']
+    return None
 
 if __name__ == "__main__":
-    db_artists = fetch_all_artist_dna()
-    if not db_artists:
-        print("No artists with sonic_dna found in the database. Run app.py to sync your library first!")
+    u_id = "db65253d-6643-4607-8988-7770f0193a13"
+    user_dna = fetch_user_dna(u_id)
+    if not user_dna:
+        print("No DNA profile found in the database. Run app.py or test_db.py first!")
     else:
-        print(f"Loaded {len(db_artists)} artists. Generating radar chart...")
-        visualize_vibes(db_artists)
+        print(f"Generating radar chart for user: {u_id}")
+        # visualize_vibes expects a list of artist objects
+        visualize_vibes([{'name': 'My Profile', 'dna': user_dna, 'count': 1}], u_id)
