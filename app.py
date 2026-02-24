@@ -73,6 +73,15 @@ def add_playlist(user_id):
     except Exception as e:
         print(f"❌ Critical Error during sync: {e}")
 
+def reset_user_taste(user_id):
+    answer = input("Are you sure you want to reset your taste? (y/n): ").strip().lower()
+    if answer == "y":
+        supabase.table("user_lib").delete().eq("user_id", user_id).execute()
+        supabase.table("public.users").update({"sonic_dna": None}).eq("id", user_id).execute()
+        print(f"🧹 Taste reset for user {user_id}")
+    else:
+        print("❌ Taste not reset")
+
 def check_sonic_dna(user_id):
     """Fetches user DNA and triggers the radar chart."""
     from radarchart import fetch_user_dna, radarchart, starchart
@@ -118,7 +127,7 @@ def show_menu():
     print("      🎧 DJWYA CONTROL CENTER 🎧")
     print("="*40)
     print(" 1. ➕ Add New Playlist (CSV Sync)")
-    print(" 2. ➖ Remove Playlist (Coming Soon)")
+    print(" 2. 🧹 Reset User Taste (Wipe Library & DNA)")
     print(" 3. 🎪 Find Festival Matches (Coming Soon)")
     print(" 4. 🧬 Check My Sonic DNA")
     print(" 5. 📊 View Favorite Genres (Coming Soon)")
@@ -160,7 +169,7 @@ def main_loop():
                 case "1":
                     add_playlist(resolved_user_id)
                 case "2":
-                    print("🚧 Playlist removal is under development.")
+                    reset_user_taste(resolved_user_id)
                 case "3":
                     find_festivals(resolved_user_id)
                 case "4":

@@ -12,7 +12,7 @@ Finish classifer table of genres
     Tweak each one
     Make each ones vibe more extreme to skew graph
 Add multiple users to Database
-    Start by making user table in database
+    Add playlist logic and playlist removal logic to the app and DB
 Add compare.py logic ultimate score 
     Add the "Master Tally" Algorithm
 
