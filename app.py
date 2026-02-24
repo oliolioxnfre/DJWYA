@@ -34,6 +34,10 @@ def add_playlist(user_id):
         print(f"📂 Analyzing {target_csv_file}...")
         break
 
+    # Ask the user if they want to filter for electronic music only
+    filter_input = input("🔍 Filter for electronic artists only? (y/n, default: y): ").strip().lower()
+    filter_choice = filter_input != 'n' # Default to True unless 'n' is explicitly entered
+
     electronic_artists = {}
     artist_requests = []
     try:
@@ -56,7 +60,7 @@ def add_playlist(user_id):
                         continue
                     
                     electronic_artists[norm_name] = {"original_name": artist_name, "count": 1}
-                    artist_requests.append((artist_name, csv_genres_list, True))
+                    artist_requests.append((artist_name, csv_genres_list, filter_choice))
 
         if artist_requests:
             print(f"🧵 Fetching genres for {len(artist_requests)} unique artists concurrently...")
