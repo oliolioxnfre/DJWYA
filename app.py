@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from classifier import GenreClassifier
 from classifier import VibeClassifier
-
+from compare import run_matching_engine
 
 load_dotenv()
 
@@ -222,6 +222,22 @@ def check_sonic_dna(user_id):
     else:
         print("❌ No Sonic DNA found. Try adding a playlist first!")
 
+def find_festivals(user_id):
+    """Runs the matching engine and prints the top festival matches."""
+    print("🎪 Analyzing festival lineups...")
+    results = run_matching_engine(user_id)
+    
+    if not results:
+        print("❌ No matches found or your library is empty. Please add a playlist first!")
+        return
+        
+    print("\n--- 🎟️ YOUR TOP FESTIVAL MATCHES 🎟️ ---")
+    for match in results:
+        # Only show festivals where there is at least a 1% match
+        if match['score'] > 0:
+            print(f"🔥 {match['festival']}: {match['score']:.1f}% Match ({match['matched_count']}/{match['total_artists']} Artists)")
+            print(f"   Lineup overlaps: {', '.join(match['shared_artists'])}\n")
+
 def show_menu():
     """Prints a premium styled menu."""
     print("\n" + "="*40)
@@ -272,7 +288,7 @@ def main_loop():
                 case "2":
                     print("🚧 Playlist removal is under development.")
                 case "3":
-                    print("🚧 Festival matching is coming soon.")
+                    find_festivals(resolved_user_id)
                 case "4":
                     check_sonic_dna(resolved_user_id)
                 case "5" | "6":
