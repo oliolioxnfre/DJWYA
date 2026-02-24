@@ -11,12 +11,10 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
 
-# Assuming your VibeClassifier class is in the same file or imported
-# from classifier import VibeClassifier
-
 def visualize_vibes(artist_data_list, user_id):
     """
     artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}, 'count': 5}]
+    Renders a 7-axis heptagonal radar chart with a complete K7 graph overlay.
     """
     if not artist_data_list:
         print("No artist data provided to visualize.")
@@ -24,8 +22,8 @@ def visualize_vibes(artist_data_list, user_id):
 
     fig = go.Figure()
 
-    # The 6 axes we defined
-    categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing']
+    # The 7 axes of the Sonic DNA heptagon
+    categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']
     
     # Init average dict
     avg_dna = {cat: 0.0 for cat in categories}
@@ -65,21 +63,21 @@ def visualize_vibes(artist_data_list, user_id):
         name=f"Scaled Average ({len(artist_data_list)} Artists, {total_plays} Plays)",
         fillcolor='rgba(255, 75, 75, 0.5)', # Vibrant red fill
         line=dict(color='rgba(255, 75, 75, 1.0)'),
-        opacity=0.7
+        opacity=0
     ))
 
-    # --- OUTER BOUNDARY ---
-    # Draw a line connecting all the outer points for visual reference
+    # --- OUTER BOUNDARY (Heptagon) ---
+    # Draw a line connecting all 7 outer points for visual reference
     fig.add_trace(go.Scatterpolar(
-        r=[10, 10, 10, 10, 10, 10, 10], 
+        r=[10, 10, 10, 10, 10, 10, 10, 10], 
         theta=display_cats,
         mode='lines',
         name="Max Potential",
         line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'),
     ))
 
-    # --- OUTER COMPLETE GRAPH (K6) ---
-    # Connect every vertex to every other vertex for a "complete graph" aesthetic at the max level
+    # --- OUTER COMPLETE GRAPH (K7) ---
+    # Connect every vertex to every other vertex for a complete heptagonal graph
     for i in range(len(categories)):
         for j in range(i + 1, len(categories)):
             fig.add_trace(go.Scatterpolar(
@@ -100,6 +98,8 @@ def visualize_vibes(artist_data_list, user_id):
                 gridcolor='rgba(255, 255, 255, 0.1)',
             ),
             angularaxis=dict(
+                rotation=90,
+                direction='clockwise',
                 gridcolor='rgba(255, 255, 255, 0.1)',
                 linecolor='rgba(255, 255, 255, 0.2)'
             ),
@@ -107,6 +107,178 @@ def visualize_vibes(artist_data_list, user_id):
         ),
         showlegend=True,
         title="Average Sonic DNA Profile (Normalized & Scaled)",
+        template="plotly_dark",
+        paper_bgcolor='rgba(15, 15, 15, 1)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+
+    fig.show()
+
+
+def starchart(artist_data_list, user_id):
+    """
+    Renders a 7-axis heptagonal star chart (spiky star geometry).
+    Creates a 14-point path alternating between data values and origin (0).
+    """
+    if not artist_data_list:
+        print("No artist data provided to starchart.")
+        return
+
+    fig = go.Figure()
+
+    # The 7 axes of the Sonic DNA heptagon
+    categories = ['INTENSITY', 'EUPHORIA', 'SPACE', 'PULSE', 'CHAOS', 'SWING', 'BASS']
+    cat_keys = [c.lower() for c in categories]
+    
+    # Init average dict
+    avg_dna = {cat: 0.0 for cat in cat_keys}
+    total_plays = sum(artist.get('count', 1) for artist in artist_data_list)
+    
+    if total_plays == 0:
+        total_plays = 1
+
+    # Sum all the values weighted by play count
+    for artist in artist_data_list:
+        dna = artist['dna']
+        count = artist.get('count', 1)
+        for cat in cat_keys:
+            avg_dna[cat] += float(dna.get(cat, 0.0)) * count
+            
+    # Divide and Scale (weighted averages -> 0-10)
+    for cat in cat_keys:
+        avg_dna[cat] /= total_plays
+    
+    current_max = max(avg_dna.values())
+    if current_max > 0:
+        scaler = 10.0 / current_max
+        for cat in cat_keys:
+            avg_dna[cat] *= scaler
+
+    # --- GEOMETRY CALCULATION (14 points for a 7-pointed star) ---
+    # We use alternating Peak (data value) and Valley (inner base)
+    angles = []
+    r_values = []
+    
+    # A base radius for the "valleys" creates the triangular spike look
+    # Increasing this makes the star's base wider
+    valley_r = 3.56 
+    
+    for i in range(len(categories)):
+        # 1. Peak Angle (The tip of the spike)
+        peak_angle = i * (360 / 7)
+        angles.append(peak_angle)
+        r_values.append(avg_dna[cat_keys[i]])
+        
+        # 2. Valley Angle (The inner dip between spikes)
+        # Offset by half a step (360/14) to be exactly between axes
+        valley_angle = peak_angle + (360 / 14)
+        angles.append(valley_angle)
+        r_values.append(valley_r) 
+    
+    # Close the loop
+    angles.append(angles[0])
+    r_values.append(r_values[0])
+
+    # --- INDIVIDUAL COLORED DIAMONDS ---
+    # We create 7 diamond shapes that meet at the center (r=0)
+    hues = [i * (360 / 7) for i in range(7)]
+    
+    for i, (cat, hue) in enumerate(zip(categories, hues)):
+        peak_val = avg_dna[cat_keys[i]]
+        
+        # Diamond Coordinates: Center -> Left Shoulder -> Tip -> Right Shoulder -> Center
+        dia_angles = [
+            i * (360/7),            # Center Point
+            i * (360/7) - (360/14), # Left Shoulder (Valley)
+            i * (360/7),            # Peak Tip
+            i * (360/7) + (360/14), # Right Shoulder (Valley)
+            i * (360/7)             # Back to Center
+        ]
+        
+        dia_r = [2.48, valley_r, peak_val, valley_r, 2.48]
+        
+        # Unique color for this diamond
+        color = f'hsla({hue}, 80%, 55%, 0.75)'
+        line_color = f'hsla({hue}, 80%, 55%, 0.9)'
+        
+        fig.add_trace(go.Scatterpolar(
+            r=dia_r,
+            theta=dia_angles,
+            fill='toself',
+            name=cat,
+            fillcolor=color,
+            line=dict(color=line_color, width=1.5),
+            marker=dict(size=4, color='white', symbol='diamond'),
+            hoverinfo='name+r'
+        ))
+
+
+    # --- OUTER BOUNDARY (Static Heptagon) ---
+    outer_angles = [i * (360 / 7) for i in range(7)]
+    outer_angles.append(outer_angles[0])
+    fig.add_trace(go.Scatterpolar(
+        r=[10] * 8,
+        theta=outer_angles,
+        mode='lines',
+        name="MAX POTENTIAL",
+        line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'),
+    ))
+
+    # --- ACUTE HEPTAGRAM {7/3} BACKGROUND STAR ---
+    # Creates a sharper background star (3x thicker)
+    acute_angles = [(i * 3 * (360 / 7)) for i in range(8)]
+    fig.add_trace(go.Scatterpolar(
+        r=[10] * 8,
+        theta=acute_angles,
+        mode='lines',
+        name="ACUTE HEPTAGRAM",
+        line=dict(color='rgba(200, 200, 200, 0.3)', width=2.8),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+
+    # --- OBTUSE HEPTAGRAM {7/2} BACKGROUND STAR ---
+    # Creates the wider background star (standard thickness)
+    obtuse_angles = [(i * 2 * (360 / 7)) for i in range(8)]
+    fig.add_trace(go.Scatterpolar(
+        r=[10] * 8,
+        theta=obtuse_angles,
+        mode='lines',
+        name="OBTUSE HEPTAGRAM",
+        line=dict(color='rgba(200, 200, 200, 0.3)', width=1.0),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+
+    # --- UPSIDEDOWN ACUTE HEPTAGRAM (Rotated) ---
+    # Adds a final layer of geometric depth with a slightly grey star
+    inverted_angles = [(i * 3 * (360 / 7)) + (360 / 14) for i in range(8)]
+    fig.add_trace(go.Scatterpolar(
+        r=[2.175] * 8,
+        theta=inverted_angles,
+        mode='lines',
+        name="INVERTED HEPTAGRAM",
+        line=dict(color='rgba(150, 150, 150, 0.2)', width=1.0),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+
+    fig.update_layout(
+        polar=dict(
+            gridshape='linear',
+            radialaxis=dict(visible=False, range=[0, 10]),
+            angularaxis=dict(
+                rotation=90,
+                direction='clockwise',
+                tickvals=[i * (360 / 7) for i in range(7)],
+                ticktext=categories,
+                gridcolor='rgba(255, 255, 255, 0.1)',
+                linecolor='rgba(255, 255, 255, 0.2)'
+            ),
+            bgcolor='rgba(0,0,0,0)'
+        ),
+        showlegend=True,
+        title="SONIC DNA STAR CHART (Normalized & Scaled)",
         template="plotly_dark",
         paper_bgcolor='rgba(15, 15, 15, 1)',
         plot_bgcolor='rgba(0,0,0,0)'
@@ -122,11 +294,10 @@ def fetch_user_dna(user_id):
     return None
 
 if __name__ == "__main__":
-    u_id = "db65253d-6643-4607-8988-7770f0193a13"
+    u_id = "af78e583-fb39-4a05-9ec4-7bc4bb2286e6"
     user_dna = fetch_user_dna(u_id)
     if not user_dna:
         print("No DNA profile found in the database. Run app.py or test_db.py first!")
     else:
-        print(f"Generating radar chart for user: {u_id}")
-        # visualize_vibes expects a list of artist objects
-        visualize_vibes([{'name': 'My Profile', 'dna': user_dna, 'count': 1}], u_id)
+        print(f"Generating Persona 5 Star Chart for user: {u_id}")
+        starchart([{'name': 'My Profile', 'dna': user_dna, 'count': 1}], u_id)
