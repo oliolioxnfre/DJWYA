@@ -1,4 +1,4 @@
-from artists_categorize import categorize_artist, sync_artists_to_supabase
+from artists_categorize import bulk_categorize_artists, sync_artists_to_supabase
 import csv
 import os
 from dotenv import load_dotenv
@@ -9,9 +9,6 @@ load_dotenv()
 
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
-
-
-
 
 # Global Supabase Client
 supabase: Client = create_client(url, key)
@@ -37,6 +34,7 @@ def add_playlist(user_id):
         break
 
     electronic_artists = {}
+    artist_requests = []
     try:
         with open(target_csv_file, mode='r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
@@ -50,16 +48,27 @@ def add_playlist(user_id):
                     csv_genres_list = [g.strip().lower().replace(" ", "-") for g in csv_genres_raw.split(',') if g.strip()]
                 
                 for artist_name in track_artists:
-                    if artist_name in electronic_artists:
-                        electronic_artists[artist_name]["count"] += 1
+                    # Normalize for tracking to avoid duplicates with different casing
+                    norm_name = artist_name.lower().strip()
+                    if norm_name in electronic_artists:
+                        electronic_artists[norm_name]["count"] += 1
                         continue
                     
-                    categorized = categorize_artist(artist_name, fallback_genres=csv_genres_list, filter_electronic=True)
-                    if categorized:
-                        categorized["count"] = 1
-                        electronic_artists[artist_name] = categorized
+                    electronic_artists[norm_name] = {"original_name": artist_name, "count": 1}
+                    artist_requests.append((artist_name, csv_genres_list, True))
 
-        sync_artists_to_supabase(electronic_artists, supabase, user_id=user_id)
+        if artist_requests:
+            print(f"🧵 Fetching genres for {len(artist_requests)} unique artists concurrently...")
+            bulk_results = bulk_categorize_artists(artist_requests)
+            
+            final_artists = {}
+            for name, categorized in bulk_results.items():
+                norm_name = name.lower().strip()
+                if norm_name in electronic_artists:
+                    categorized["count"] = electronic_artists[norm_name]["count"]
+                    final_artists[name] = categorized
+
+            sync_artists_to_supabase(final_artists, supabase, user_id=user_id)
     except Exception as e:
         print(f"❌ Critical Error during sync: {e}")
 

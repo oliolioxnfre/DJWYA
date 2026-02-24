@@ -1,5 +1,6 @@
 import pylast
 import os
+import concurrent.futures
 from dotenv import load_dotenv
 from classifier import GenreClassifier, VibeClassifier
 
@@ -119,52 +120,125 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True)
                 }
             return None
 
+def _categorize_worker(args):
+    """Worker function for unpacking args into categorize_artist."""
+    artist_name, fallback_genres, filter_electronic = args
+    return categorize_artist(artist_name, fallback_genres, filter_electronic)
+
+def bulk_categorize_artists(artist_requests, max_workers=10):
+    """
+    Multithreaded generation of categorized artist dicts.
+    artist_requests is a list of tuples: (artist_name, fallback_genres, filter_electronic)
+    """
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Map the worker over the requests
+        future_to_artist = {executor.submit(_categorize_worker, req): req[0] for req in artist_requests}
+        for future in concurrent.futures.as_completed(future_to_artist):
+            artist_name = future_to_artist[future]
+            try:
+                categorized = future.result()
+                if categorized:
+                    results[artist_name] = categorized
+            except Exception as e:
+                print(f"❌ Error processing {artist_name}: {e}")
+                
+    return results
+
 def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
-    """Syncs a dictionary of analyzed artists to the Supabase database."""
+    """Syncs a dictionary of analyzed artists to the Supabase database using bulk operations."""
     if not artist_dict:
         print("⚠️ No artists found to sync.")
         return
 
     print(f"🚀 Syncing {len(artist_dict)} artists to Supabase...")
+    
+    # 1. Prepare slug to artist mapping
+    slugs_to_process = []
+    artist_metadata_map = {}
+    
     for item in artist_dict.values():
         name_slug = item['name'].lower().replace(" ", "-")
-        
-        # --- PART A: Update the Global Artist Dictionary ---
-        artist_metadata = {
+        slugs_to_process.append(name_slug)
+        artist_metadata_map[name_slug] = {
             "name": item['name'],
             "name_slug": name_slug,
             "genres": item.get('genres', []),
             "vibe_bucket": item.get('vibe_bucket', []),
             "sonic_dna": item.get('sonic_dna', {})
         }
-        
-        # Check if artist already exists to get their UUID
-        existing_artist = supabase_client.table("artists").select("id").eq("name_slug", name_slug).execute()
-        
-        if existing_artist.data and len(existing_artist.data) > 0:
-            artist_id = existing_artist.data[0]['id']
-            # Update the existing artist
-            supabase_client.table("artists").update(artist_metadata).eq("id", artist_id).execute()
-        else:
-            # Insert new artist
-            inserted_artist = supabase_client.table("artists").insert(artist_metadata).execute()
-            if inserted_artist.data:
-                artist_id = inserted_artist.data[0]['id']
-            else:
-                print(f"❌ Failed to insert artist {item['name']}")
-                continue
 
-        # --- PART B: Update Personal Library (If user_id provided) ---
-        if user_id and 'count' in item:
-            library_data = {
-                "user_id": user_id,
-                "artist_id": artist_id,
-                "count": item['count']
-            }
-            supabase_client.table("user_lib").upsert(library_data, on_conflict="user_id,artist_id").execute()
+    # 2. Fetch existing artists from Supabase to correctly route inserts vs updates
+    # We slice into groups of 100 just in case the query is too large, but typically it is fine.
+    existing_slug_to_id = {}
+    batch_size = 100
+    for i in range(0, len(slugs_to_process), batch_size):
+        batch_slugs = slugs_to_process[i:i+batch_size]
+        try:
+            res = supabase_client.table("artists").select("id, name_slug").in_("name_slug", batch_slugs).execute()
+            if res.data:
+                for row in res.data:
+                    existing_slug_to_id[row["name_slug"]] = row["id"]
+        except Exception as e:
+            print(f"❌ Error fetching bulk slugs: {e}")
+
+    # 3. Separate into Inserts and Updates
+    inserts = []
+    updates = []
+    
+    for slug, payload in artist_metadata_map.items():
+        if slug in existing_slug_to_id:
+            # We must include the ID to perform an update or upsert
+            payload["id"] = existing_slug_to_id[slug]
+            updates.append(payload)
+        else:
+            inserts.append(payload)
             
-    # Finally, update the aggregate User DNA in the users table if a user_id was provided
+    # 4. Perform Bulk DB Writes
+    try:
+        if inserts:
+            res = supabase_client.table("artists").insert(inserts).execute()
+            # Catch the new IDs so we can use them for the library logic
+            if res.data:
+                for row in res.data:
+                    existing_slug_to_id[row["name_slug"]] = row["id"]
+                    
+        if updates:
+            # Upsert acts as a bulk update if the ID is provided and exists
+            supabase_client.table("artists").upsert(updates).execute()
+    except Exception as e:
+        print(f"❌ Error during bulk artist write: {e}")
+
+    # 5. Process Personal Library
     if user_id:
+        # Aggregate counts by artist_id to prevent duplicates in the bulk upsert
+        library_data_agg = {}
+        for item in artist_dict.values():
+            if 'count' not in item: continue
+            
+            name_slug = item['name'].lower().replace(" ", "-")
+            artist_id = existing_slug_to_id.get(name_slug)
+            
+            if artist_id:
+                if artist_id in library_data_agg:
+                    library_data_agg[artist_id]['count'] += item['count']
+                else:
+                    library_data_agg[artist_id] = {
+                        "user_id": user_id,
+                        "artist_id": artist_id,
+                        "count": item.get('count', 1)
+                    }
+        
+        library_inserts = list(library_data_agg.values())
+        
+        if library_inserts:
+            try:
+                supabase_client.table("user_lib").upsert(library_inserts, on_conflict="user_id,artist_id").execute()
+            except Exception as e:
+                print(f"❌ Error inserting user library batch: {e}")
+                
+        # Update user DNA after sync
         VibeClassifier.update_user_dna(user_id)
         
     print(f"✨ Finished Syncing {len(artist_dict)} artists to Supabase!")
+
