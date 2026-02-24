@@ -1,3 +1,4 @@
+from radarchart import starchart
 from artists_categorize import bulk_categorize_artists, sync_artists_to_supabase
 import csv
 import os
@@ -74,10 +75,24 @@ def add_playlist(user_id):
 
 def check_sonic_dna(user_id):
     """Fetches user DNA and triggers the radar chart."""
-    from radarchart import fetch_user_dna, visualize_vibes
+    from radarchart import fetch_user_dna, radarchart, starchart
     dna = fetch_user_dna(user_id)
     if dna:
-        visualize_vibes([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id)
+        print("\n" + "="*40)
+        print("      🧬 DJWYA SONIC DNA 🧬")
+        print("="*40)
+        print(" 1. Radarchart")
+        print(" 2. Starchart")
+        print("-" * 40)
+        print(" 0. Go Back")
+        print("="*40)
+        select = input("\nSelect an option: ").strip()
+        if select == "1":
+            radarchart([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id)
+        elif select == "2":
+            starchart([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id)
+        elif select == "0":
+            return
     else:
         print("❌ No Sonic DNA found. Try adding a playlist first!")
 

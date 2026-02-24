@@ -11,7 +11,7 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
 
-def visualize_vibes(artist_data_list, user_id):
+def radarchart(artist_data_list, user_id):
     """
     artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}, 'count': 5}]
     Renders a 7-axis heptagonal radar chart with a complete K7 graph overlay.
@@ -195,10 +195,10 @@ def starchart(artist_data_list, user_id):
             i * (360/7)             # Back to Center
         ]
         
-        dia_r = [2.48, valley_r, peak_val, valley_r, 2.48]
+        dia_r = [1.33, valley_r, peak_val, valley_r, 1.33]
         
         # Unique color for this diamond
-        color = f'hsla({hue}, 80%, 55%, 0.75)'
+        color = f'hsla({hue}, 80%, 55%, 0.55)'
         line_color = f'hsla({hue}, 80%, 55%, 0.9)'
         
         fig.add_trace(go.Scatterpolar(
@@ -213,6 +213,24 @@ def starchart(artist_data_list, user_id):
         ))
 
 
+    # --- RADIAL AXIS DOTS ---
+    # Draw dots at r = 2, 4, 6, 8, 10 for each of the 7 axes
+    for i in range(7):
+        axis_angle = i * (360 / 7)
+        fig.add_trace(go.Scatterpolar(
+            r=[2, 4, 6, 8, 10],
+            theta=[axis_angle] * 5,
+            mode='markers',
+            marker=dict(
+                size=4,
+                color='rgba(255, 255, 255, 0.4)',
+                symbol='circle'
+            ),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+
+
     # --- OUTER BOUNDARY (Static Heptagon) ---
     outer_angles = [i * (360 / 7) for i in range(7)]
     outer_angles.append(outer_angles[0])
@@ -221,7 +239,7 @@ def starchart(artist_data_list, user_id):
         theta=outer_angles,
         mode='lines',
         name="MAX POTENTIAL",
-        line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'),
+        line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'), #remove dash if you want
     ))
 
     # --- ACUTE HEPTAGRAM {7/3} BACKGROUND STAR ---
@@ -250,15 +268,17 @@ def starchart(artist_data_list, user_id):
         hoverinfo='skip'
     ))
 
-    # --- UPSIDEDOWN ACUTE HEPTAGRAM (Rotated) ---
+    # --- UPSIDEDOWN ACUTE INNER HEPTAGRAM (Rotated) ---
     # Adds a final layer of geometric depth with a slightly grey star
     inverted_angles = [(i * 3 * (360 / 7)) + (360 / 14) for i in range(8)]
     fig.add_trace(go.Scatterpolar(
-        r=[2.175] * 8,
+        r=[3.56] * 8, #2.175 = inner
         theta=inverted_angles,
+        fill='toself',
+        fillcolor='rgba(150, 150, 150, 0.1)',
         mode='lines',
         name="INVERTED HEPTAGRAM",
-        line=dict(color='rgba(150, 150, 150, 0.2)', width=1.0),
+        line=dict(color='rgba(150, 150, 150, 0.5)', width=1.5),
         showlegend=False,
         hoverinfo='skip'
     ))
