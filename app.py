@@ -120,10 +120,15 @@ def find_festivals(user_id):
         
     print("\n--- 🎟️ YOUR TOP FESTIVAL MATCHES 🎟️ ---")
     for match in results:
-        # Only show festivals where there is at least a 1% match
-        if match['score'] > 0:
-            print(f"🔥 {match['festival']}: {match['score']:.1f}% Match ({match['matched_count']}/{match['total_artists']} Artists)")
-            print(f"   Lineup overlaps: {', '.join(match['shared_artists'])}\n")
+        # Only show festivals where there is at least some match
+        if match['total_match'] > 0:
+            print(f"🔥 {match['festival']}")
+            print(f"   Artist % Match:  {match['artist_perc']:.1f}%")
+            print(f"   Artist Score:    {match['artist_score']:.2f}")
+            print(f"   Synergy Match:   {match['synergy_match']:.2f}%")
+            print(f"   Total Match:     {match['total_match']:.2f}")
+            print(f"   Artist Overlap:  {', '.join(match['shared_artists'])} ({match['matched_count']}/{match['total_artists']})")
+            print("-" * 40 + "\n")
 
 def show_menu():
     """Prints a premium styled menu."""
@@ -132,7 +137,7 @@ def show_menu():
     print("="*40)
     print(" 1. ➕ Add New Playlist (CSV Sync)")
     print(" 2. 🧹 Reset User Taste (Wipe Library & DNA)")
-    print(" 3. 🎪 Find Festival Matches (Coming Soon)")
+    print(" 3. 🎪 Find Festival Matches")
     print(" 4. 🧬 Check My Sonic DNA")
     print(" 5. 📊 View Favorite Genres (Coming Soon)")
     print(" 6. 🎙️ View Favorite Artists (Coming Soon)")
