@@ -3,6 +3,7 @@ import csv
 import glob
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from artists_categorize import categorize_artist, sync_artists_to_supabase
 
 load_dotenv()
 
@@ -43,13 +44,44 @@ def aggregate_csv_festivals():
                     unique_artists.update(collaborators)
         
         artists_list = list(unique_artists)
+        print(f"\n[{festival_name}] Found {len(artists_list)} unique artists.")
         
-        print(f"[{festival_name}] Found {len(artists_list)} unique artists. Uploading to Supabase...")
+        # Phase 1: Categorize all artists
+        print(f"[{festival_name}] Categorizing artists from Last.fm...")
+        festival_artists_dict = {}
+        for artist_name in artists_list:
+            # We don't filter out non-electronic genres because these are electronic festivals
+            categorized = categorize_artist(artist_name, fallback_genres=[], filter_electronic=False)
+            if categorized:
+                festival_artists_dict[artist_name] = categorized
+                
+        # Phase 2: Sync to artists database
+        print(f"[{festival_name}] Syncing {len(festival_artists_dict)} artists to Supabase 'artists' table...")
+        sync_artists_to_supabase(festival_artists_dict, supabase, user_id=None)
+
+        # Phase 3: Calculate Festival DNA
+        print(f"[{festival_name}] Calculating aggregate Sonic DNA...")
+        festival_dna = {'intensity': 0.0, 'euphoria': 0.0, 'space': 0.0, 'pulse': 0.0, 'chaos': 0.0, 'swing': 0.0}
+        total_artists_with_dna = 0
+
+        for artist_data in festival_artists_dict.values():
+            dna = artist_data.get('sonic_dna')
+            if dna and sum(dna.values()) > 0:
+                total_artists_with_dna += 1
+                for cat in festival_dna.keys():
+                    festival_dna[cat] += dna.get(cat, 0)
         
-        # Prepare payload
+        if total_artists_with_dna > 0:
+            festival_dna = {k: round(v / total_artists_with_dna, 1) for k, v in festival_dna.items()}
+        
+        print(f"[{festival_name}] Calculated DNA: {festival_dna}")
+        
+        # Phase 4: Prepare and insert payload
+        print(f"[{festival_name}] Uploading festival to Supabase...")
         payload = {
             "name": festival_name,
-            "lineup": artists_list
+            "lineup": artists_list,
+            "sonic_dna": festival_dna
         }
         
         try:
