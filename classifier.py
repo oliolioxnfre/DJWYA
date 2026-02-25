@@ -69,142 +69,140 @@ class VibeClassifier:
     
     # The Master Sonic DNA Dictionary
     SONIC_DNA = {
-        # --- PARENT: HOUSE ---
-        'house':             {'intensity': 4, 'euphoria': 8, 'space': 4, 'pulse': 10, 'chaos': 0, 'swing': 10, 'bass': 4},
-        'deep-house':        {'intensity': 1.5, 'euphoria': 9, 'space': 10, 'pulse': 10, 'chaos': 0.5, 'swing': 9, 'bass': 6},
-        'tech-house':        {'intensity': 8, 'euphoria': 3, 'space': 2.5, 'pulse': 10, 'chaos': 3, 'swing': 10, 'bass': 7},
-        'progressive-house': {'intensity': 4.5, 'euphoria': 10, 'space': 9.5, 'pulse': 10, 'chaos': 1.5, 'swing': 2.5, 'bass': 3},
-        'future-house':      {'intensity': 8, 'euphoria': 8.5, 'space': 3, 'pulse': 10, 'chaos': 4, 'swing': 8, 'bass': 8.5},
-        'bass-house':        {'intensity': 10, 'euphoria': 2, 'space': 1.5, 'pulse': 10, 'chaos': 8, 'swing': 9, 'bass': 10},
-        'tropical-house':    {'intensity': 1, 'euphoria': 10, 'space': 8.5, 'pulse': 10, 'chaos': 0.5, 'swing': 7, 'bass': 2},
-        'electro-house':     {'intensity': 9.5, 'euphoria': 6.5, 'space': 2, 'pulse': 10, 'chaos': 7, 'swing': 3, 'bass': 8},
-        'acid-house':        {'intensity': 8, 'euphoria': 4, 'space': 6.5, 'pulse': 10, 'chaos': 10, 'swing': 8, 'bass': 5},
-        'g-house':           {'intensity': 9, 'euphoria': 1.5, 'space': 2, 'pulse': 10, 'chaos': 3, 'swing': 10, 'bass': 9.5},
-        'afro-house':        {'intensity': 3, 'euphoria': 7, 'space': 8, 'pulse': 10, 'chaos': 2, 'swing': 10, 'bass': 4},
-        'organic-house':     {'intensity': 1, 'euphoria': 8, 'space': 10, 'pulse': 10, 'chaos': 1, 'swing': 10, 'bass': 3},
-        'chicago-house':     {'intensity': 4, 'euphoria': 8, 'space': 4, 'pulse': 10, 'chaos': 3, 'swing': 10, 'bass': 5},
-        'disco-house':       {'intensity': 4, 'euphoria': 10, 'space': 4, 'pulse': 10, 'chaos': 1.5, 'swing': 10, 'bass': 4},
-        'nu-disco':          {'intensity': 3, 'euphoria': 9.5, 'space': 5, 'pulse': 10, 'chaos': 2.5, 'swing': 10, 'bass': 4.5},
-        'lo-fi-house':       {'intensity': 2, 'euphoria': 4, 'space': 10, 'pulse': 10, 'chaos': 6, 'swing': 9, 'bass': 4},
-        'funky-house':       {'intensity': 3.5, 'euphoria': 9.5, 'space': 3.5, 'pulse': 10, 'chaos': 2, 'swing': 10, 'bass': 5.5},
-        'hard-house':        {'intensity': 10, 'euphoria': 4, 'space': 0.5, 'pulse': 10, 'chaos': 7, 'swing': 5, 'bass': 7.5},
-        'jazz-house':        {'intensity': 2.5, 'euphoria': 8.5, 'space': 8, 'pulse': 10, 'chaos': 6, 'swing': 10, 'bass': 4},
-        'rally-house':       {'intensity': 8, 'euphoria': 5, 'space': 3, 'pulse': 10, 'chaos': 6, 'swing': 8, 'bass': 7},
-        'witch-house':       {'intensity': 9.5, 'euphoria': 2, 'space': 10, 'pulse': 6, 'chaos': 7, 'swing': 3, 'bass': 8.5},
-        'melodic-house':     {'intensity': 3, 'euphoria': 9.5, 'space': 10, 'pulse': 10, 'chaos': 1, 'swing': 5, 'bass': 3.5},
-        'speed-house':       {'intensity': 10, 'euphoria': 6, 'space': 2.5, 'pulse': 10, 'chaos': 9, 'swing': 9, 'bass': 8},
-        'ghetto-house':      {'intensity': 9.5, 'euphoria': 1, 'space': 1.5, 'pulse': 10, 'chaos': 8, 'swing': 10, 'bass': 9},
-        'g-house':           {'intensity': 9.5, 'euphoria': 1, 'space': 1.5, 'pulse': 10, 'chaos': 8, 'swing': 10, 'bass': 9}, # Duplicate but good for mapping
+        # --- PARENT: HOUSE (Pulse heavy, moderate swing, low/mid bass) ---
+        'house':             {'intensity': 4, 'euphoria': 8, 'space': 4, 'pulse': 8.5, 'chaos': 0, 'swing': 6, 'bass': 3},
+        'deep-house':        {'intensity': 1.5, 'euphoria': 9, 'space': 9, 'pulse': 8, 'chaos': 0.5, 'swing': 6, 'bass': 4},
+        'tech-house':        {'intensity': 7, 'euphoria': 3, 'space': 2.5, 'pulse': 9, 'chaos': 3, 'swing': 6.5, 'bass': 4.5},
+        'progressive-house': {'intensity': 4.5, 'euphoria': 9.5, 'space': 9, 'pulse': 8.5, 'chaos': 1.5, 'swing': 5, 'bass': 3},
+        'future-house':      {'intensity': 8, 'euphoria': 8.5, 'space': 3, 'pulse': 9, 'chaos': 4, 'swing': 6, 'bass': 5.5},
+        'bass-house':        {'intensity': 9, 'euphoria': 2, 'space': 1.5, 'pulse': 9.5, 'chaos': 8, 'swing': 5.5, 'bass': 6.5},
+        'tropical-house':    {'intensity': 1, 'euphoria': 9.5, 'space': 8, 'pulse': 8, 'chaos': 0.5, 'swing': 6.5, 'bass': 2},
+        'electro-house':     {'intensity': 9.5, 'euphoria': 6.5, 'space': 2, 'pulse': 9.5, 'chaos': 7, 'swing': 5, 'bass': 5.5},
+        'acid-house':        {'intensity': 8, 'euphoria': 4, 'space': 6, 'pulse': 9, 'chaos': 9, 'swing': 6, 'bass': 4},
+        'g-house':           {'intensity': 8.5, 'euphoria': 1.5, 'space': 2, 'pulse': 9, 'chaos': 3, 'swing': 7, 'bass': 5.5},
+        'afro-house':        {'intensity': 3, 'euphoria': 7, 'space': 8, 'pulse': 8.5, 'chaos': 2, 'swing': 8, 'bass': 3.5},
+        'organic-house':     {'intensity': 1, 'euphoria': 8, 'space': 9.5, 'pulse': 8, 'chaos': 1, 'swing': 6.5, 'bass': 2.5},
+        'chicago-house':     {'intensity': 4, 'euphoria': 8, 'space': 4, 'pulse': 9, 'chaos': 3, 'swing': 7, 'bass': 3.5},
+        'disco-house':       {'intensity': 4, 'euphoria': 9.5, 'space': 4, 'pulse': 8.5, 'chaos': 1.5, 'swing': 7.5, 'bass': 3},
+        'nu-disco':          {'intensity': 3, 'euphoria': 9, 'space': 5, 'pulse': 8.5, 'chaos': 2.5, 'swing': 8, 'bass': 3.5},
+        'lo-fi-house':       {'intensity': 2, 'euphoria': 4, 'space': 9.5, 'pulse': 8, 'chaos': 6, 'swing': 7, 'bass': 3},
+        'funky-house':       {'intensity': 3.5, 'euphoria': 9, 'space': 3.5, 'pulse': 8.5, 'chaos': 2, 'swing': 8.5, 'bass': 4},
+        'hard-house':        {'intensity': 9.5, 'euphoria': 4, 'space': 0.5, 'pulse': 10, 'chaos': 7, 'swing': 4, 'bass': 5},
+        'jazz-house':        {'intensity': 2.5, 'euphoria': 8.5, 'space': 8, 'pulse': 8, 'chaos': 5, 'swing': 9, 'bass': 3},
+        'rally-house':       {'intensity': 8, 'euphoria': 5, 'space': 3, 'pulse': 9, 'chaos': 6, 'swing': 8, 'bass': 5},
+        'witch-house':       {'intensity': 8, 'euphoria': 2, 'space': 9.5, 'pulse': 5, 'chaos': 7, 'swing': 7, 'bass': 6.5},
+        'melodic-house':     {'intensity': 3, 'euphoria': 9.5, 'space': 9.5, 'pulse': 8.5, 'chaos': 1, 'swing': 5, 'bass': 3},
+        'speed-house':       {'intensity': 9.5, 'euphoria': 6, 'space': 2.5, 'pulse': 10, 'chaos': 8, 'swing': 6, 'bass': 5.5},
+        'ghetto-house':      {'intensity': 9, 'euphoria': 1, 'space': 1.5, 'pulse': 9.5, 'chaos': 8, 'swing': 8, 'bass': 5.5},
 
-        # --- PARENT: TECHNO ---
-        'techno':            {'intensity': 8.5, 'euphoria': 0.5, 'space': 5, 'pulse': 10, 'chaos': 0, 'swing': 0, 'bass': 6},
-        'minimal-techno':    {'intensity': 2.5, 'euphoria': 1.5, 'space': 10, 'pulse': 10, 'chaos': 0.5, 'swing': 0, 'bass': 2.5},
-        'hard-techno':       {'intensity': 10, 'euphoria': 0, 'space': 2.5, 'pulse': 10, 'chaos': 4, 'swing': 0, 'bass': 8.5},
-        'acid-techno':       {'intensity': 10, 'euphoria': 1.5, 'space': 4, 'pulse': 10, 'chaos': 10, 'swing': 0.5, 'bass': 7},
-        'dub-techno':        {'intensity': 3, 'euphoria': 2.5, 'space': 10, 'pulse': 7, 'chaos': 1, 'swing': 3, 'bass': 7.5},
-        'detroit-techno':    {'intensity': 6.5, 'euphoria': 4, 'space': 6, 'pulse': 10, 'chaos': 5, 'swing': 5, 'bass': 4.5},
-        'peak-time-techno':  {'intensity': 10, 'euphoria': 4, 'space': 4, 'pulse': 10, 'chaos': 1.5, 'swing': 0, 'bass': 7.5},
-        'industrial-techno': {'intensity': 10, 'euphoria': 0, 'space': 3.5, 'pulse': 10, 'chaos': 7, 'swing': 0, 'bass': 8},
-        'melodic-techno':    {'intensity': 4, 'euphoria': 9.5, 'space': 10, 'pulse': 10, 'chaos': 0.5, 'swing': 0.5, 'bass': 3.5},
-        'dark-techno':       {'intensity': 9.5, 'euphoria': 0, 'space': 8.5, 'pulse': 10, 'chaos': 4, 'swing': 0, 'bass': 7},
-        'hypnotic-techno':   {'intensity': 3, 'euphoria': 1.5, 'space': 10, 'pulse': 10, 'chaos': 0, 'swing': 0, 'bass': 4},
-        'cyber-house':       {'intensity': 8.5, 'euphoria': 6.5, 'space': 10, 'pulse': 10, 'chaos': 6, 'swing': 1.5, 'bass': 7},
+        # --- PARENT: TECHNO (High pulse, zero swing, clinical bass) ---
+        'techno':            {'intensity': 8.5, 'euphoria': 0.5, 'space': 5, 'pulse': 9.5, 'chaos': 0, 'swing': 0, 'bass': 4.5},
+        'minimal-techno':    {'intensity': 2.5, 'euphoria': 1.5, 'space': 9.5, 'pulse': 9, 'chaos': 0.5, 'swing': 0, 'bass': 2.5},
+        'hard-techno':       {'intensity': 10, 'euphoria': 0, 'space': 2.5, 'pulse': 10, 'chaos': 4, 'swing': 0, 'bass': 6},
+        'acid-techno':       {'intensity': 9.5, 'euphoria': 1.5, 'space': 4, 'pulse': 9.5, 'chaos': 9.5, 'swing': 0.5, 'bass': 5},
+        'dub-techno':        {'intensity': 3, 'euphoria': 2.5, 'space': 10, 'pulse': 8, 'chaos': 1, 'swing': 2, 'bass': 5.5},
+        'detroit-techno':    {'intensity': 6.5, 'euphoria': 4, 'space': 6, 'pulse': 9, 'chaos': 4, 'swing': 3, 'bass': 4},
+        'peak-time-techno':  {'intensity': 10, 'euphoria': 4, 'space': 4, 'pulse': 10, 'chaos': 1.5, 'swing': 0, 'bass': 5.5},
+        'industrial-techno': {'intensity': 10, 'euphoria': 0, 'space': 3.5, 'pulse': 10, 'chaos': 7, 'swing': 0, 'bass': 6.5},
+        'melodic-techno':    {'intensity': 4, 'euphoria': 9, 'space': 9.5, 'pulse': 9, 'chaos': 0.5, 'swing': 0.5, 'bass': 3.5},
+        'dark-techno':       {'intensity': 9.5, 'euphoria': 0, 'space': 8, 'pulse': 9.5, 'chaos': 4, 'swing': 0, 'bass': 5},
+        'hypnotic-techno':   {'intensity': 3, 'euphoria': 1.5, 'space': 9.5, 'pulse': 9, 'chaos': 0, 'swing': 0, 'bass': 3.5},
+        'cyber-house':       {'intensity': 8.5, 'euphoria': 6.5, 'space': 9, 'pulse': 9, 'chaos': 6, 'swing': 1.5, 'bass': 5},
 
-        # --- PARENT: TRANCE ---
-        'trance':            {'intensity': 7, 'euphoria': 10, 'space': 10, 'pulse': 10, 'chaos': 0.5, 'swing': 0, 'bass': 2.5},
-        'uplifting-trance':  {'intensity': 8, 'euphoria': 10, 'space': 10, 'pulse': 10, 'chaos': 1, 'swing': 0, 'bass': 2},
-        'psytrance':         {'intensity': 10, 'euphoria': 4, 'space': 8.5, 'pulse': 10, 'chaos': 10, 'swing': 1, 'bass': 7},
-        'progressive-trance':{'intensity': 5, 'euphoria': 9.5, 'space': 9.5, 'pulse': 10, 'chaos': 1.5, 'swing': 1.5, 'bass': 3.5},
-        'goa-trance':        {'intensity': 9, 'euphoria': 7.5, 'space': 9, 'pulse': 10, 'chaos': 10, 'swing': 2, 'bass': 6},
-        'vocal-trance':      {'intensity': 4.5, 'euphoria': 10, 'space': 9.5, 'pulse': 8.5, 'chaos': 0.5, 'swing': 0, 'bass': 1.5},
-        'tech-trance':       {'intensity': 9.5, 'euphoria': 3, 'space': 5, 'pulse': 10, 'chaos': 6, 'swing': 0.5, 'bass': 6.5},
-        'dream-trance':      {'intensity': 2, 'euphoria': 10, 'space': 10, 'pulse': 7, 'chaos': 0.5, 'swing': 0.5, 'bass': 1},
-        'hard-trance':       {'intensity': 10, 'euphoria': 7.5, 'space': 5, 'pulse': 10, 'chaos': 5, 'swing': 0.5, 'bass': 7},
-        'acid-trance':       {'intensity': 9, 'euphoria': 5.5, 'space': 7.5, 'pulse': 10, 'chaos': 10, 'swing': 1.5, 'bass': 6},
+        # --- PARENT: TRANCE (High euphoria, high space, high pulse) ---
+        'trance':            {'intensity': 7, 'euphoria': 9.5, 'space': 9.5, 'pulse': 9, 'chaos': 0.5, 'swing': 0, 'bass': 3},
+        'uplifting-trance':  {'intensity': 8, 'euphoria': 10, 'space': 10, 'pulse': 9, 'chaos': 1, 'swing': 0, 'bass': 2.5},
+        'psytrance':         {'intensity': 9.5, 'euphoria': 4, 'space': 8.5, 'pulse': 9.5, 'chaos': 9, 'swing': 1, 'bass': 5},
+        'progressive-trance':{'intensity': 5, 'euphoria': 9, 'space': 9, 'pulse': 8.5, 'chaos': 1.5, 'swing': 1, 'bass': 3},
+        'goa-trance':        {'intensity': 9, 'euphoria': 7.5, 'space': 9, 'pulse': 9.5, 'chaos': 9.5, 'swing': 1.5, 'bass': 4.5},
+        'vocal-trance':      {'intensity': 4.5, 'euphoria': 10, 'space': 9.5, 'pulse': 8.5, 'chaos': 0.5, 'swing': 0, 'bass': 2},
+        'tech-trance':       {'intensity': 9, 'euphoria': 3, 'space': 5, 'pulse': 9.5, 'chaos': 6, 'swing': 0.5, 'bass': 4.5},
+        'dream-trance':      {'intensity': 2, 'euphoria': 10, 'space': 10, 'pulse': 7.5, 'chaos': 0.5, 'swing': 0.5, 'bass': 1.5},
+        'hard-trance':       {'intensity': 9.5, 'euphoria': 7.5, 'space': 5, 'pulse': 10, 'chaos': 5, 'swing': 0.5, 'bass': 5},
+        'acid-trance':       {'intensity': 9, 'euphoria': 5.5, 'space': 7.5, 'pulse': 9.5, 'chaos': 9.5, 'swing': 1.5, 'bass': 4.5},
 
-        # --- PARENT: DRUM AND BASS ---
-        'drum-and-bass':     {'intensity': 9.5, 'euphoria': 4.5, 'space': 3.5, 'pulse': 0, 'chaos': 8, 'swing': 10, 'bass': 9.5},
-        'liquid-dnb':        {'intensity': 3, 'euphoria': 10, 'space': 10, 'pulse': 1, 'chaos': 1.5, 'swing': 10, 'bass': 7.5},
-        'neurofunk':         {'intensity': 10, 'euphoria': 1, 'space': 4, 'pulse': 1, 'chaos': 10, 'swing': 8.5, 'bass': 10},
-        'jump-up':           {'intensity': 10, 'euphoria': 5, 'space': 1.5, 'pulse': 1.5, 'chaos': 9, 'swing': 10, 'bass': 9.5},
-        'jungle':            {'intensity': 8.5, 'euphoria': 6, 'space': 6, 'pulse': 0, 'chaos': 10, 'swing': 10, 'bass': 8.5},
-        'breakcore':         {'intensity': 10, 'euphoria': 2, 'space': 3, 'pulse': 0, 'chaos': 10, 'swing': 4, 'bass': 8},
-        'halftime-dnb':      {'intensity': 9, 'euphoria': 3.5, 'space': 7.5, 'pulse': 1.5, 'chaos': 7, 'swing': 10, 'bass': 10},
-        'techstep':          {'intensity': 10, 'euphoria': 0, 'space': 3.5, 'pulse': 1, 'chaos': 8.5, 'swing': 8.5, 'bass': 9.5},
-        'darkstep':          {'intensity': 10, 'euphoria': 0, 'space': 4, 'pulse': 1, 'chaos': 10, 'swing': 7.5, 'bass': 10},
-        'atmospheric-dnb':   {'intensity': 3.5, 'euphoria': 9.5, 'space': 10, 'pulse': 1, 'chaos': 2.5, 'swing': 9, 'bass': 6.5},
-        'atmospheric-jungle':{'intensity': 4.5, 'euphoria': 8.5, 'space': 10, 'pulse': 0, 'chaos': 7, 'swing': 10, 'bass': 8},
+        # --- PARENT: DRUM AND BASS (Low pulse, high swing, mid-high bass) ---
+        'drum-and-bass':     {'intensity': 9, 'euphoria': 4.5, 'space': 3.5, 'pulse': 1, 'chaos': 7, 'swing': 8.5, 'bass': 7.5},
+        'liquid-dnb':        {'intensity': 3, 'euphoria': 9.5, 'space': 9.5, 'pulse': 1, 'chaos': 1.5, 'swing': 9, 'bass': 6.5},
+        'neurofunk':         {'intensity': 10, 'euphoria': 1, 'space': 4, 'pulse': 1.5, 'chaos': 9, 'swing': 7.5, 'bass': 9},
+        'jump-up':           {'intensity': 9.5, 'euphoria': 5, 'space': 1.5, 'pulse': 1.5, 'chaos': 8.5, 'swing': 8.5, 'bass': 8.5},
+        'jungle':            {'intensity': 8.5, 'euphoria': 6, 'space': 6, 'pulse': 0.5, 'chaos': 9, 'swing': 9.5, 'bass': 7.5},
+        'breakcore':         {'intensity': 10, 'euphoria': 2, 'space': 3, 'pulse': 0, 'chaos': 10, 'swing': 6, 'bass': 6},
+        'halftime-dnb':      {'intensity': 8.5, 'euphoria': 3.5, 'space': 7.5, 'pulse': 1, 'chaos': 6, 'swing': 9, 'bass': 8.5},
+        'techstep':          {'intensity': 9.5, 'euphoria': 0, 'space': 3.5, 'pulse': 1.5, 'chaos': 8, 'swing': 7, 'bass': 8},
+        'darkstep':          {'intensity': 10, 'euphoria': 0, 'space': 4, 'pulse': 1, 'chaos': 9.5, 'swing': 6.5, 'bass': 8.5},
+        'atmospheric-dnb':   {'intensity': 3.5, 'euphoria': 9, 'space': 9.5, 'pulse': 1, 'chaos': 2.5, 'swing': 8, 'bass': 6},
+        'atmospheric-jungle':{'intensity': 4.5, 'euphoria': 8.5, 'space': 9.5, 'pulse': 0.5, 'chaos': 7, 'swing': 9, 'bass': 6.5},
 
-        # --- PARENT: BASS MUSIC & DUBSTEP ---
-        'dubstep':           {'intensity': 10, 'euphoria': 7, 'space': 4.5, 'pulse': 0.5, 'chaos': 9, 'swing': 5.5, 'bass': 7},
-        'riddim':            {'intensity': 10, 'euphoria': 0.5, 'space': 0.5, 'pulse': 1.5, 'chaos': 7, 'swing': 8, 'bass': 10},
-        'brostep':           {'intensity': 10, 'euphoria': 5, 'space': 2, 'pulse': 1, 'chaos': 10, 'swing': 3.5, 'bass': 7},
-        'future-bass':       {'intensity': 6.5, 'euphoria': 10, 'space': 8.5, 'pulse': 3.5, 'chaos': 7, 'swing': 5.5, 'bass': 6},
-        'wave':              {'intensity': 3.5, 'euphoria': 8, 'space': 10, 'pulse': 4, 'chaos': 4, 'swing': 3.5, 'bass': 7.5},
-        'glitch-hop':        {'intensity': 7.5, 'euphoria': 9.5, 'space': 5.5, 'pulse': 2.5, 'chaos': 10, 'swing': 10, 'bass': 6},
-        'color-bass':        {'intensity': 9.5, 'euphoria': 10, 'space': 7.5, 'pulse': 1.5, 'chaos': 9.5, 'swing': 5, 'bass': 6},
-        'colour-bass':       {'intensity': 9.5, 'euphoria': 10, 'space': 7.5, 'pulse': 1.5, 'chaos': 9.5, 'swing': 5, 'bass': 6},
-        'melodic-dubstep':   {'intensity': 8.5, 'euphoria': 10, 'space': 9.5, 'pulse': 0.5, 'chaos': 3.5, 'swing': 2.5, 'bass': 6},
-        'deathstep':         {'intensity': 10, 'euphoria': 0, 'space': 1.5, 'pulse': 0.5, 'chaos': 10, 'swing': 1.5, 'bass': 10},
-        'uk-garage':         {'intensity': 6, 'euphoria': 4, 'space': 6, 'pulse': 10, 'chaos': 4.5, 'swing': 10, 'bass': 8},
-        'speed-garage':      {'intensity': 8, 'euphoria': 5, 'space': 3.5, 'pulse': 10, 'chaos': 6, 'swing': 10, 'bass': 9},
-        '2-step':            {'intensity': 3.5, 'euphoria': 6.5, 'space': 5, 'pulse': 4, 'chaos': 6, 'swing': 10, 'bass': 8},
-        'melodic-bass':      {'intensity': 7.5, 'euphoria': 10, 'space': 9.5, 'pulse': 1.5, 'chaos': 5.5, 'swing': 3.5, 'bass': 9},
-        'glitchcore':        {'intensity': 10, 'euphoria': 10, 'space': 2.5, 'pulse': 3.5, 'chaos': 10, 'swing': 4.5, 'bass': 8.5},
-        'bass':              {'intensity': 8.5, 'euphoria': 4.5, 'space': 4.5, 'pulse': 4.5, 'chaos': 7, 'swing': 7.5, 'bass': 10},
-        'glitch':            {'intensity': 8, 'euphoria': 9, 'space': 6.5, 'pulse': 2.5, 'chaos': 10, 'swing': 5.5, 'bass': 6.5},
-        'moombahton':        {'intensity': 8, 'euphoria': 8.5, 'space': 3.5, 'pulse': 8.5, 'chaos': 5.5, 'swing': 10, 'bass': 8.5},
-        'midtempo-bass':     {'intensity': 10, 'euphoria': 3.5, 'space': 9, 'pulse': 6, 'chaos': 9, 'swing': 5, 'bass': 10},
-        'hardwave':          {'intensity': 8, 'euphoria': 8.5, 'space': 10, 'pulse': 4.5, 'chaos': 7, 'swing': 3.5, 'bass': 8.5},
-        'drift-phonk':       {'intensity': 10, 'euphoria': 0.5, 'space': 3.5, 'pulse': 5.5, 'chaos': 9, 'swing': 10, 'bass': 9.5},
-        'juke':              {'intensity': 9.5, 'euphoria': 2.5, 'space': 2.5, 'pulse': 0, 'chaos': 10, 'swing': 10, 'bass': 7.5},
-        'footwork':          {'intensity': 10, 'euphoria': 2.5, 'space': 3.5, 'pulse': 0, 'chaos': 10, 'swing': 10, 'bass': 7.5},
-        'grime':             {'intensity': 9, 'euphoria': 1.5, 'space': 3.5, 'pulse': 1.5, 'chaos': 8, 'swing': 10, 'bass': 10},
-        'dub':               {'intensity': 2, 'euphoria': 6, 'space': 10, 'pulse': 7.5, 'chaos': 5, 'swing': 10, 'bass': 10},
+        # --- PARENT: BASS MUSIC & DUBSTEP (The Baseline is 7 for Bass) ---
+        'dubstep':           {'intensity': 9.5, 'euphoria': 8, 'space': 4.5, 'pulse': 1, 'chaos': 8.5, 'swing': 5.5, 'bass': 7},
+        'riddim':            {'intensity': 10, 'euphoria': 1, 'space': 1, 'pulse': 1.5, 'chaos': 7.5, 'swing': 7.5, 'bass': 9.5},
+        'brostep':           {'intensity': 9, 'euphoria': 4, 'space': 2, 'pulse': 1.5, 'chaos': 9.5, 'swing': 4, 'bass': 7.5},
+        'future-bass':       {'intensity': 6.5, 'euphoria': 9.5, 'space': 8.5, 'pulse': 3.5, 'chaos': 6, 'swing': 8.5, 'bass': 6},
+        'wave':              {'intensity': 3.5, 'euphoria': 8, 'space': 9.5, 'pulse': 4, 'chaos': 4, 'swing': 4, 'bass': 6.5},
+        'glitch-hop':        {'intensity': 7.5, 'euphoria': 8, 'space': 5.5, 'pulse': 2.5, 'chaos': 9, 'swing': 9.5, 'bass': 5.5},
+        'color-bass':        {'intensity': 9, 'euphoria': 9.5, 'space': 7.5, 'pulse': 1.5, 'chaos': 8.5, 'swing': 5.5, 'bass': 6},
+        'colour-bass':       {'intensity': 9, 'euphoria': 9.5, 'space': 7.5, 'pulse': 1.5, 'chaos': 8.5, 'swing': 5.5, 'bass': 6},
+        'melodic-dubstep':   {'intensity': 8, 'euphoria': 10, 'space': 9, 'pulse': 1, 'chaos': 3.5, 'swing': 3.5, 'bass': 6.5},
+        'deathstep':         {'intensity': 10, 'euphoria': 0, 'space': 1.5, 'pulse': 1, 'chaos': 10, 'swing': 2, 'bass': 9.5},
+        'uk-garage':         {'intensity': 6, 'euphoria': 6, 'space': 6, 'pulse': 6, 'chaos': 4.5, 'swing': 9.5, 'bass': 6.5},
+        'speed-garage':      {'intensity': 8, 'euphoria': 5, 'space': 3.5, 'pulse': 8.5, 'chaos': 6, 'swing': 9, 'bass': 7.5},
+        '2-step':            {'intensity': 3.5, 'euphoria': 6.5, 'space': 5, 'pulse': 4, 'chaos': 5, 'swing': 9.5, 'bass': 6.5},
+        'melodic-bass':      {'intensity': 7, 'euphoria': 9.5, 'space': 9, 'pulse': 2, 'chaos': 5, 'swing': 4.5, 'bass': 6.5},
+        'glitchcore':        {'intensity': 10, 'euphoria': 9, 'space': 2.5, 'pulse': 4, 'chaos': 10, 'swing': 5, 'bass': 6.5},
+        'bass':              {'intensity': 8.5, 'euphoria': 4.5, 'space': 4.5, 'pulse': 4.5, 'chaos': 7, 'swing': 7.5, 'bass': 7.5},
+        'glitch':            {'intensity': 8, 'euphoria': 7, 'space': 6.5, 'pulse': 2.5, 'chaos': 9.5, 'swing': 6, 'bass': 5},
+        'moombahton':        {'intensity': 7.5, 'euphoria': 7.5, 'space': 3.5, 'pulse': 7, 'chaos': 5.5, 'swing': 9.5, 'bass': 6.5},
+        'midtempo-bass':     {'intensity': 9.5, 'euphoria': 3.5, 'space': 8, 'pulse': 6, 'chaos': 8, 'swing': 5, 'bass': 8},
+        'hardwave':          {'intensity': 8, 'euphoria': 8, 'space': 9.5, 'pulse': 5, 'chaos': 7, 'swing': 4, 'bass': 7},
+        'drift-phonk':       {'intensity': 9.5, 'euphoria': 1.5, 'space': 3.5, 'pulse': 5.5, 'chaos': 8.5, 'swing': 8.5, 'bass': 8},
+        'juke':              {'intensity': 9, 'euphoria': 2.5, 'space': 2.5, 'pulse': 1, 'chaos': 9.5, 'swing': 9.5, 'bass': 6.5},
+        'footwork':          {'intensity': 9.5, 'euphoria': 2.5, 'space': 3.5, 'pulse': 1, 'chaos': 10, 'swing': 10, 'bass': 6.5},
+        'grime':             {'intensity': 8.5, 'euphoria': 1.5, 'space': 3.5, 'pulse': 2, 'chaos': 7.5, 'swing': 8.5, 'bass': 8},
+        'dub':               {'intensity': 2, 'euphoria': 6, 'space': 9.5, 'pulse': 4, 'chaos': 4, 'swing': 8, 'bass': 8.5},
 
         # --- PARENT: HARD DANCE / HARDCORE ---
-        'hardstyle':         {'intensity': 10, 'euphoria': 7.5, 'space': 3.5, 'pulse': 10, 'chaos': 5.5, 'swing': 0, 'bass': 8.5},
-        'euphoric-hardstyle':{'intensity': 9.5, 'euphoria': 10, 'space': 5.5, 'pulse': 10, 'chaos': 4.5, 'swing': 1.5, 'bass': 7.5},
-        'rawstyle':          {'intensity': 10, 'euphoria': 1.5, 'space': 1.5, 'pulse': 10, 'chaos': 8, 'swing': 0, 'bass': 10},
-        'gabber':            {'intensity': 10, 'euphoria': 0, 'space': 1.5, 'pulse': 10, 'chaos': 9, 'swing': 0, 'bass': 9.5},
-        'happy-hardcore':    {'intensity': 9.5, 'euphoria': 10, 'space': 5, 'pulse': 10, 'chaos': 7, 'swing': 3.5, 'bass': 6.5},
-        'frenchcore':        {'intensity': 10, 'euphoria': 2.5, 'space': 1.5, 'pulse': 10, 'chaos': 10, 'swing': 0, 'bass': 10},
-        'uptempo-hardcore':  {'intensity': 10, 'euphoria': 0, 'space': 0, 'pulse': 10, 'chaos': 10, 'swing': 0, 'bass': 9},
-        'hard-dance':        {'intensity': 10, 'euphoria': 6.5, 'space': 3.5, 'pulse': 10, 'chaos': 7, 'swing': 1.5, 'bass': 8},
-        'hard-bass':         {'intensity': 10, 'euphoria': 3.5, 'space': 0.5, 'pulse': 10, 'chaos': 6, 'swing': 10, 'bass': 10},
-        'donk':              {'intensity': 10, 'euphoria': 8.5, 'space': 0.5, 'pulse': 10, 'chaos': 9, 'swing': 10, 'bass': 9},
-        'bounce':            {'intensity': 8.5, 'euphoria': 9.5, 'space': 1.5, 'pulse': 10, 'chaos': 5.5, 'swing': 10, 'bass': 8},
-        'scouse-house':      {'intensity': 8.5, 'euphoria': 9.5, 'space': 1.5, 'pulse': 10, 'chaos': 6.5, 'swing': 10, 'bass': 8},
-        'nightcore':         {'intensity': 10, 'euphoria': 9, 'space': 3, 'pulse': 9, 'chaos': 8, 'swing': 5.5, 'bass': 3},
+        'hardstyle':         {'intensity': 9.5, 'euphoria': 7.5, 'space': 3.5, 'pulse': 9.5, 'chaos': 5.5, 'swing': 0, 'bass': 6.5},
+        'euphoric-hardstyle':{'intensity': 9, 'euphoria': 9.5, 'space': 5.5, 'pulse': 9.5, 'chaos': 4.5, 'swing': 1.5, 'bass': 5.5},
+        'rawstyle':          {'intensity': 10, 'euphoria': 1.5, 'space': 1.5, 'pulse': 9.5, 'chaos': 8, 'swing': 0, 'bass': 8},
+        'gabber':            {'intensity': 10, 'euphoria': 0, 'space': 1.5, 'pulse': 10, 'chaos': 9, 'swing': 0, 'bass': 7.5},
+        'happy-hardcore':    {'intensity': 9, 'euphoria': 9.5, 'space': 5, 'pulse': 9.5, 'chaos': 7, 'swing': 3.5, 'bass': 4.5},
+        'frenchcore':        {'intensity': 10, 'euphoria': 2.5, 'space': 1.5, 'pulse': 10, 'chaos': 9.5, 'swing': 0, 'bass': 7.5},
+        'uptempo-hardcore':  {'intensity': 10, 'euphoria': 0, 'space': 0, 'pulse': 10, 'chaos': 10, 'swing': 0, 'bass': 7},
+        'hard-dance':        {'intensity': 9.5, 'euphoria': 6.5, 'space': 3.5, 'pulse': 9.5, 'chaos': 7, 'swing': 1.5, 'bass': 6},
+        'hard-bass':         {'intensity': 9.5, 'euphoria': 3.5, 'space': 0.5, 'pulse': 9.5, 'chaos': 6, 'swing': 7.5, 'bass': 8},
+        'donk':              {'intensity': 9.5, 'euphoria': 8, 'space': 0.5, 'pulse': 9.5, 'chaos': 8.5, 'swing': 8.5, 'bass': 6.5},
+        'bounce':            {'intensity': 8.5, 'euphoria': 9, 'space': 1.5, 'pulse': 9, 'chaos': 5.5, 'swing': 8.5, 'bass': 5.5},
+        'scouse-house':      {'intensity': 8.5, 'euphoria': 9, 'space': 1.5, 'pulse': 9, 'chaos': 6.5, 'swing': 8.5, 'bass': 5.5},
+        'nightcore':         {'intensity': 9.5, 'euphoria': 9, 'space': 3, 'pulse': 8.5, 'chaos': 8, 'swing': 5.5, 'bass': 2.5},
 
         # --- PARENT: DOWNTEMPO / EXPERIMENTAL ---
-        'downtempo':         {'intensity': 0, 'euphoria': 6.5, 'space': 10, 'pulse': 3.5, 'chaos': 0.5, 'swing': 8, 'bass': 4.5},
-        'idm':               {'intensity': 0.5, 'euphoria': 3.5, 'space': 9, 'pulse': 0, 'chaos': 10, 'swing': 7, 'bass': 4.5},
-        'trip-hop':          {'intensity': 0.5, 'euphoria': 4.5, 'space': 8.5, 'pulse': 4, 'chaos': 4.5, 'swing': 10, 'bass': 8},
-        'chillstep':         {'intensity': 0, 'euphoria': 8.5, 'space': 10, 'pulse': 2.5, 'chaos': 1.5, 'swing': 5, 'bass': 7},
-        'psydub':            {'intensity': 0, 'euphoria': 8, 'space': 10, 'pulse': 3.5, 'chaos': 8, 'swing': 8, 'bass': 9},
-        'vaporwave':         {'intensity': 1.5, 'euphoria': 8, 'space': 10, 'pulse': 2.5, 'chaos': 4, 'swing': 4.5, 'bass': 2.5},
-        'synthwave':         {'intensity': 2, 'euphoria': 8.5, 'space': 9.5, 'pulse': 8.5, 'chaos': 1.5, 'swing': 3.5, 'bass': 5.5},
-        'illbient':          {'intensity': 0, 'euphoria': 0.5, 'space': 10, 'pulse': 2, 'chaos': 9, 'swing': 3.5, 'bass': 6},
-        'ethereal':          {'intensity': 0, 'euphoria': 10, 'space': 10, 'pulse': 0, 'chaos': 0.5, 'swing': 1.5, 'bass': 0.5},
+        'downtempo':         {'intensity': 0.5, 'euphoria': 6.5, 'space': 9.5, 'pulse': 3.5, 'chaos': 0.5, 'swing': 7, 'bass': 3.5},
+        'idm':               {'intensity': 1, 'euphoria': 3.5, 'space': 8.5, 'pulse': 0.5, 'chaos': 9.5, 'swing': 7, 'bass': 3},
+        'trip-hop':          {'intensity': 1, 'euphoria': 4.5, 'space': 8, 'pulse': 3.5, 'chaos': 4.5, 'swing': 9, 'bass': 5},
+        'chillstep':         {'intensity': 0.5, 'euphoria': 8.5, 'space': 9.5, 'pulse': 2.5, 'chaos': 1.5, 'swing': 5, 'bass': 4.5},
+        'psydub':            {'intensity': 1, 'euphoria': 8, 'space': 9.5, 'pulse': 3.5, 'chaos': 7.5, 'swing': 7, 'bass': 7},
+        'vaporwave':         {'intensity': 1.5, 'euphoria': 8, 'space': 9.5, 'pulse': 2.5, 'chaos': 4, 'swing': 4.5, 'bass': 2},
+        'synthwave':         {'intensity': 2.5, 'euphoria': 8, 'space': 9, 'pulse': 8, 'chaos': 1.5, 'swing': 3.5, 'bass': 4},
+        'illbient':          {'intensity': 0.5, 'euphoria': 0.5, 'space': 9.5, 'pulse': 2, 'chaos': 8.5, 'swing': 3.5, 'bass': 4.5},
+        'ethereal':          {'intensity': 0, 'euphoria': 9.5, 'space': 10, 'pulse': 0.5, 'chaos': 0.5, 'swing': 1.5, 'bass': 1},
         'ambient':           {'intensity': 0, 'euphoria': 5, 'space': 10, 'pulse': 0, 'chaos': 0, 'swing': 0, 'bass': 0.5},
-        'dream-pop':         {'intensity': 1.5, 'euphoria': 9.5, 'space': 10, 'pulse': 1.5, 'chaos': 0.5, 'swing': 3.5, 'bass': 2.5},
-        'outrun':            {'intensity': 3.5, 'euphoria': 8.5, 'space': 8.5, 'pulse': 9.5, 'chaos': 1.5, 'swing': 2.5, 'bass': 5.5},
-        'retrowave':         {'intensity': 2, 'euphoria': 8.5, 'space': 9.5, 'pulse': 8.5, 'chaos': 1.5, 'swing': 2.5, 'bass': 5.5},
-        'chillsynth':        {'intensity': 0.5, 'euphoria': 7.5, 'space': 10, 'pulse': 5.5, 'chaos': 1.5, 'swing': 3.5, 'bass': 2.5},
-        'musique-concrete':  {'intensity': 1.5, 'euphoria': 0, 'space': 10, 'pulse': 0, 'chaos': 10, 'swing': 2.5, 'bass': 1.5},
-        'deconstructed-club':{'intensity': 9.5, 'euphoria': 0.5, 'space': 8, 'pulse': 2.5, 'chaos': 10, 'swing': 4.5, 'bass': 8},
+        'dream-pop':         {'intensity': 1.5, 'euphoria': 9, 'space': 9.5, 'pulse': 1.5, 'chaos': 0.5, 'swing': 3.5, 'bass': 2},
+        'outrun':            {'intensity': 3.5, 'euphoria': 8, 'space': 8.5, 'pulse': 8.5, 'chaos': 1.5, 'swing': 2.5, 'bass': 4.5},
+        'retrowave':         {'intensity': 2, 'euphoria': 8, 'space': 9, 'pulse': 8, 'chaos': 1.5, 'swing': 2.5, 'bass': 4},
+        'chillsynth':        {'intensity': 0.5, 'euphoria': 7.5, 'space': 9.5, 'pulse': 5, 'chaos': 1.5, 'swing': 3.5, 'bass': 2},
+        'musique-concrete':  {'intensity': 1.5, 'euphoria': 0, 'space': 9.5, 'pulse': 0, 'chaos': 9.5, 'swing': 2.5, 'bass': 1.5},
+        'deconstructed-club':{'intensity': 9, 'euphoria': 0.5, 'space': 8, 'pulse': 2.5, 'chaos': 9.5, 'swing': 4.5, 'bass': 6.5},
 
         # --- MISC / HYBRID ---
-        'hyperpop':          {'intensity': 10, 'euphoria': 9, 'space': 5.5, 'pulse': 5.5, 'chaos': 10, 'swing': 8, 'bass': 5},
-        'eurodance':         {'intensity': 7.5, 'euphoria': 10, 'space': 3.5, 'pulse': 10, 'chaos': 2.5, 'swing': 6.5, 'bass': 5.5},
-        'complextro':        {'intensity': 10, 'euphoria': 10, 'space': 4.5, 'pulse': 10, 'chaos': 10, 'swing': 6.5, 'bass': 7},
-        'big-room':          {'intensity': 10, 'euphoria': 7.5, 'space': 5.5, 'pulse': 10, 'chaos': 2.5, 'swing': 0, 'bass': 8},
-        'hardwell-style':    {'intensity': 10, 'euphoria': 7.5, 'space': 5.5, 'pulse': 10, 'chaos': 2.5, 'swing': 1.5, 'bass': 8},
-        'phonk':             {'intensity': 10, 'euphoria': 0.5, 'space': 0, 'pulse': 3.5, 'chaos': 8, 'swing': 10, 'bass': 10},
-        'edm':               {'intensity': 8.5, 'euphoria': 8.5, 'space': 5.5, 'pulse': 10, 'chaos': 4.5, 'swing': 4.5, 'bass': 6.5},
-        'breakbeat':         {'intensity': 7.5, 'euphoria': 5, 'space': 5, 'pulse': 1.5, 'chaos': 8, 'swing': 10, 'bass': 7.5},
-        'future-funk':       {'intensity': 4.5, 'euphoria': 10, 'space': 5.5, 'pulse': 8.5, 'chaos': 3.5, 'swing': 10, 'bass': 6}
+        'hyperpop':          {'intensity': 9.5, 'euphoria': 8.5, 'space': 5.5, 'pulse': 5.5, 'chaos': 9.5, 'swing': 7, 'bass': 4.5},
+        'eurodance':         {'intensity': 7.5, 'euphoria': 9.5, 'space': 3.5, 'pulse': 9, 'chaos': 2.5, 'swing': 6, 'bass': 4},
+        'complextro':        {'intensity': 9.5, 'euphoria': 9, 'space': 4.5, 'pulse': 9, 'chaos': 9.5, 'swing': 6.5, 'bass': 5.5},
+        'big-room':          {'intensity': 6.5, 'euphoria': 7.5, 'space': 5.5, 'pulse': 9.5, 'chaos': 2.5, 'swing': 0, 'bass': 6},
+        'hardwell-style':    {'intensity': 9, 'euphoria': 7.5, 'space': 5.5, 'pulse': 9.5, 'chaos': 2.5, 'swing': 1.5, 'bass': 6},
+        'phonk':             {'intensity': 9, 'euphoria': 1, 'space': 1, 'pulse': 3.5, 'chaos': 7.5, 'swing': 9, 'bass': 7.5},
+        'breakbeat':         {'intensity': 7.5, 'euphoria': 5, 'space': 5, 'pulse': 2, 'chaos': 7.5, 'swing': 9, 'bass': 6},
+        'future-funk':       {'intensity': 4.5, 'euphoria': 9.5, 'space': 5.5, 'pulse': 8, 'chaos': 3.5, 'swing': 9.5, 'bass': 4.5}
     }
 
     # High-level "umbrella" genres that skew data if combined with specific subgenres
@@ -295,6 +293,50 @@ class VibeClassifier:
         return artist_data_list
 
 
+
+    @classmethod
+    def recalculate_all_artist_dna(cls):
+        """Iterates through every artist in the database and updates their Sonic DNA based on current mapping."""
+        load_dotenv()
+        url = os.environ.get("SUPABASE_URL")
+        key = os.environ.get("SUPABASE_KEY")
+        supabase: Client = create_client(url, key)
+        
+        print("🔄 Fetching all artists from database...")
+        # Note: using 'id' to ensure we update the correct row precisely
+        response = supabase.table("artists").select("id, name, name_slug, genres").execute()
+        artists = response.data
+        
+        if not artists:
+            print("❌ No artists found in database.")
+            return
+
+        print(f"🧪 Recalculating DNA for {len(artists)} artists using new dramatic values...")
+        updates = []
+        
+        for artist in artists:
+            genres = artist.get('genres', [])
+            if not genres:
+                continue
+                
+            new_dna = cls.get_artist_vibe(genres)
+            if new_dna:
+                updates.append({
+                    "id": artist['id'], 
+                    "name": artist['name'],
+                    "name_slug": artist['name_slug'],
+                    "sonic_dna": new_dna
+                })
+        
+        if updates:
+            print(f"🚀 Syncing {len(updates)} updates to Supabase in batches...")
+            # Batch updates in chunks of 500
+            for i in range(0, len(updates), 500):
+                batch = updates[i:i+500]
+                supabase.table("artists").upsert(batch).execute()
+        
+        print(f"✅ Successfully updated DNA for {len(updates)} artists.")
+        return len(updates)
 
     @classmethod
     def calculate_user_dna(cls, artist_data_list):
