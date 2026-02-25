@@ -50,6 +50,9 @@ def radarchart(artist_data_list, user_id):
         scaler = 10.0 / current_max
         for cat in categories:
             avg_dna[cat] *= scaler
+            
+            # Round to nearest even number (0, 2, 4, 6, 8, 10)
+            avg_dna[cat] = round(avg_dna[cat] / 2.0) * 2
 
     # Plotly requires the first category to be repeated at the end to close the loop
     values = [avg_dna[cat] for cat in categories]
@@ -153,6 +156,9 @@ def starchart(artist_data_list, user_id):
         scaler = 10.0 / current_max
         for cat in cat_keys:
             avg_dna[cat] *= scaler
+
+            # Round to nearest even number (0, 2, 4, 6, 8, 10)
+            avg_dna[cat] = round(avg_dna[cat] / 2.0) * 2
 
     # --- GEOMETRY CALCULATION (14 points for a 7-pointed star) ---
     # We use alternating Peak (data value) and Valley (inner base)
