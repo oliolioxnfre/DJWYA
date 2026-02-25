@@ -130,6 +130,25 @@ def find_festivals(user_id):
             print(f"   Artist Overlap:  {', '.join(match['shared_artists'])} ({match['matched_count']}/{match['total_artists']})")
             print("-" * 40 + "\n")
 
+def recalculate_system_dna(user_id):
+    """Triggers a full system-wide DNA refresh for all artists and the current user."""
+    from classifier import VibeClassifier
+    print("\n" + "="*40)
+    print("      🔄 SYSTEM MAINTENANCE 🔄")
+    print("="*40)
+    print("⚠️  This will recalculate DNA for EVERY artist in the database")
+    print("based on your newest dramatic sonic mappings.")
+    
+    confirm = input("\nProceed? (y/n): ").strip().lower()
+    if confirm == 'y':
+        # 1. Update all artists in the 'artists' table
+        VibeClassifier.recalculate_all_artist_dna()
+        # 2. Update the current user's aggregate DNA based on those new artist values
+        VibeClassifier.update_user_dna(user_id)
+        print("\n✅ System-wide DNA refresh complete!")
+    else:
+        print("❌ Operation cancelled.")
+
 def show_menu():
     """Prints a premium styled menu."""
     print("\n" + "="*40)
@@ -141,6 +160,7 @@ def show_menu():
     print(" 4. 🧬 Check My Sonic DNA")
     print(" 5. 📊 View Favorite Genres (Coming Soon)")
     print(" 6. 🎙️ View Favorite Artists (Coming Soon)")
+    print(" 7. 🔄 Recalculate System DNA (All Artists)")
     print("-" * 40)
     print(" 9. 🚪 Logout")
     print(" 0. 🏁 Exit")
@@ -185,6 +205,9 @@ def main_loop():
                     check_sonic_dna(resolved_user_id)
                 case "5" | "6":
                     print("🚧 Visual analytics are coming in the next update!")
+                case "7":
+                    recalculate_system_dna(resolved_user_id)
+                    
                 case "9":
                     print(f"Logging out {username}...")
                     break # Back to the username prompt
