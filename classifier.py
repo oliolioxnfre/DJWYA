@@ -67,6 +67,8 @@ class VibeClassifier:
     Axes: [Intensity, Euphoria, Space, Pulse, Chaos, Swing, Bass]
     """
     
+    CATEGORIES = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']
+    
     # The Master Sonic DNA Dictionary
     SONIC_DNA = {
         # --- PARENT: HOUSE (Pulse heavy, moderate swing, low/mid bass) ---
@@ -244,14 +246,14 @@ class VibeClassifier:
         total_weight = sum(weights)
         
         avg_vibe = {}
-        for category in ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']:
+        for category in cls.CATEGORIES:
             # Sum (value * weight) for each matched genre
             weighted_sum = sum(v[category] * w for v, w in zip(vectors, weights))
             # Divide by total weight to normalize back to a 1-10 scale
             avg_vibe[category] = weighted_sum / total_weight
         
         # Round to 1 decimal place for clean data
-        return {k: round(v, 1) for k, v in avg_vibe.items()}
+        return {k: round(v, 2) for k, v in avg_vibe.items()}
 
 
     @classmethod
@@ -260,12 +262,13 @@ class VibeClassifier:
         url = os.environ.get("SUPABASE_URL")
         key = os.environ.get("SUPABASE_KEY")
         supabase: Client = create_client(url, key)
-        """Queries the user_lib table joined with artists to get play counts and sonic_dna."""
         print(f"Fetching sonic DNA and play counts for {user_id}...")
         # We ask for the user_lib row, but ALSO tell Supabase 
         # to look up the name and sonic_dna from the artists table.
-        response = supabase.table("user_lib").select("count, artists(name, sonic_dna)").eq("user_id", user_id).execute()
+        response = supabase.table("user_lib").select("count, artists(name, sonic_dna, genres)").eq("user_id", user_id).execute()
         artist_data_list = []
+        full_artist_info_list = [] # For subgenre extraction
+        
         for row in response.data:
             play_count = row.get("count", 1)
             artist_info = row.get('artists')
@@ -274,22 +277,34 @@ class VibeClassifier:
                 
             dna = artist_info.get("sonic_dna")
             name = artist_info.get("name", "Unknown Artist")
+            genres = artist_info.get("genres", [])
             
             if dna and isinstance(dna, dict):
                 # Only add if it has all the standard categories
-                categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']
-                if all(cat in dna for cat in categories):
+                if all(cat in dna for cat in cls.CATEGORIES):
                     artist_data_list.append({
                         'name': name,
                         'dna': dna,
+                        'count': play_count
+                    })
+                    full_artist_info_list.append({
+                        'name': name,
+                        'genres': genres,
                         'count': play_count
                     })
         
         # Calculate the user's DNA
         user_dna = cls.calculate_user_dna(artist_data_list)
         
-        # Update the user's DNA in the database
-        supabase.table("public.users").update({"sonic_dna": user_dna}).eq("id", user_id).execute()
+        # Calculate the user's Subgenre Vector (Top 25)
+        user_subgenres = cls.extract_top_subgenres(full_artist_info_list, limit=25)
+        
+        # Update the user's data in the database
+        supabase.table("public.users").update({
+            "sonic_dna": user_dna,
+            "subgenres": user_subgenres
+        }).eq("id", user_id).execute()
+        
         return artist_data_list
 
 
@@ -339,18 +354,75 @@ class VibeClassifier:
         return len(updates)
 
     @classmethod
-    def calculate_user_dna(cls, artist_data_list):
-        """Calculates a weighted average DNA for the user based on artist DNA and play counts."""
+    def calculate_dna(cls, artist_data_list):
+        """
+        Calculates a frequency-weighted average DNA for a collection of artists.
+        artist_data_list: List of dicts like [{'dna': {...}, 'count': 5}]
+        Returns a dict with the averaged categories.
+        """
         if not artist_data_list:
-            return {'intensity': 0, 'euphoria': 0, 'space': 0, 'pulse': 0, 'chaos': 0, 'swing': 0, 'bass': 0}
+            return {cat: 0.0 for cat in cls.CATEGORIES}
             
-        categories = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']
-        total_play_count = sum(item['count'] for item in artist_data_list)
-        
-        user_dna = {cat: 0.0 for cat in categories}
+        total_plays = sum(item.get('count', 1) for item in artist_data_list)
+        if total_plays == 0:
+            return {cat: 0.0 for cat in cls.CATEGORIES}
+            
+        final_dna = {cat: 0.0 for cat in cls.CATEGORIES}
         for item in artist_data_list:
-            weight = item['count'] / total_play_count
-            for cat in categories:
-                user_dna[cat] += item['dna'][cat] * weight
+            dna = item['dna']
+            count = item.get('count', 1)
+            weight = count / total_plays
+            for cat in cls.CATEGORIES:
+                final_dna[cat] += dna.get(cat, 0.0) * weight
                 
-        return {cat: round(val, 1) for cat, val in user_dna.items()}
+        return {cat: round(val, 2) for cat, val in final_dna.items()}
+
+    @classmethod
+    def calculate_user_dna(cls, artist_data_list):
+        """Wrapper for calculate_dna, specifically for user context."""
+        return cls.calculate_dna(artist_data_list)
+
+    @classmethod
+    def extract_top_subgenres(cls, artist_info_list, limit=25):
+        """
+        Aggregates subgenres from artist info (name, genres, count).
+        Weights subgenres based on artist frequency.
+        Returns a normalized dict of top X subgenres.
+        """
+        subgenre_weights = {}
+        
+        for artist in artist_info_list:
+            genres = artist.get('genres', [])
+            count = artist.get('count', 1)
+            
+            # Map raw genres to our canonical subgenres
+            mapped_subgenres = []
+            for g in genres:
+                g_lower = g.lower()
+                if g_lower in cls.SONIC_DNA:
+                    mapped_subgenres.append(g_lower)
+            
+            if not mapped_subgenres:
+                continue
+                
+            # Distribute the artist's "weight" (play count) across their subgenres
+            # The first subgenre gets the most weight (per get_artist_vibe logic)
+            weights = [1.0 / (i + 1) for i in range(len(mapped_subgenres))]
+            total_artist_weight = sum(weights)
+            
+            for sub, w in zip(mapped_subgenres, weights):
+                contribution = (w / total_artist_weight) * count
+                subgenre_weights[sub] = subgenre_weights.get(sub, 0.0) + contribution
+        
+        if not subgenre_weights:
+            return {}
+            
+        # Sort by weight descending
+        sorted_subgenres = sorted(subgenre_weights.items(), key=lambda x: x[1], reverse=True)
+        top_subgenres = sorted_subgenres[:limit]
+        
+        # Normalize weights between 0 and 1 relative to the top subgenre
+        max_weight = top_subgenres[0][1]
+        normalized_vector = {sub: round(w / max_weight, 3) for sub, w in top_subgenres}
+        
+        return normalized_vector

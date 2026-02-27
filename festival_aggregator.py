@@ -30,7 +30,7 @@ def aggregate_csv_festivals():
         filename = os.path.basename(filepath)
         festival_name = filename.replace('.csv', '').replace('_', ' ')
         
-        unique_artists = set()
+        unique_artists_counts = {} # name -> count
         
         with open(filepath, mode='r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
@@ -41,10 +41,11 @@ def aggregate_csv_festivals():
                 if artists_str:
                     # Split by semicolon to separate collaborations
                     collaborators = [name.strip() for name in artists_str.split(';')]
-                    unique_artists.update(collaborators)
+                    for name in collaborators:
+                        unique_artists_counts[name] = unique_artists_counts.get(name, 0) + 1
         
-        artists_list = list(unique_artists)
-        print(f"\n[{festival_name}] Found {len(artists_list)} unique artists.")
+        artists_list = list(unique_artists_counts.keys())
+        print(f"\n[{festival_name}] Found {len(artists_list)} unique artists ({sum(unique_artists_counts.values())} total entries).")
         
         # Phase 1: Categorize all artists (Using optimized bulk lookup)
         print(f"[{festival_name}] Categorizing artists...")
@@ -58,30 +59,44 @@ def aggregate_csv_festivals():
         # Phase 2: Sync to artists database
         print(f"[{festival_name}] Syncing {len(festival_artists_dict)} artists to Supabase 'artists' table...")
         sync_artists_to_supabase(festival_artists_dict, supabase, user_id=None)
-
-        # Phase 3: Calculate Festival DNA
-        print(f"[{festival_name}] Calculating aggregate Sonic DNA...")
-        festival_dna = {'intensity': 0.0, 'euphoria': 0.0, 'space': 0.0, 'pulse': 0.0, 'chaos': 0.0, 'swing': 0.0}
-        total_artists_with_dna = 0
-
-        for artist_data in festival_artists_dict.values():
-            dna = artist_data.get('sonic_dna')
-            if dna and sum(dna.values()) > 0:
-                total_artists_with_dna += 1
-                for cat in festival_dna.keys():
-                    festival_dna[cat] += dna.get(cat, 0)
+ 
+        # Phase 3: Calculate Festival DNA and Subgenre Vector
+        print(f"[{festival_name}] Calculating aggregate Sonic DNA & Subgenres...")
+        from classifier import VibeClassifier
         
-        if total_artists_with_dna > 0:
-            festival_dna = {k: round(v / total_artists_with_dna, 1) for k, v in festival_dna.items()}
+        artist_dna_list = []
+        artist_info_list = [] # For subgenre extraction
+        
+        for name, artist_data in festival_artists_dict.items():
+            dna = artist_data.get('sonic_dna')
+            genres = artist_data.get('genres', [])
+            count = unique_artists_counts.get(name, 1)
+            
+            if dna and any(val > 0 for val in dna.values()):
+                artist_dna_list.append({
+                    'dna': dna,
+                    'count': count
+                })
+            
+            artist_info_list.append({
+                'name': name,
+                'genres': genres,
+                'count': count
+            })
+        
+        festival_dna = VibeClassifier.calculate_dna(artist_dna_list)
+        festival_subgenres = VibeClassifier.extract_top_subgenres(artist_info_list, limit=25)
         
         print(f"[{festival_name}] Calculated DNA: {festival_dna}")
+        print(f"[{festival_name}] Calculated Subgenres: {len(festival_subgenres)} keys")
         
         # Phase 4: Prepare and insert payload
         print(f"[{festival_name}] Uploading festival to Supabase...")
         payload = {
             "name": festival_name,
             "lineup": artists_list,
-            "sonic_dna": festival_dna
+            "sonic_dna": festival_dna,
+            "subgenres": festival_subgenres
         }
         
         try:
