@@ -275,16 +275,22 @@ def starchart(artist_data_list, user_id):
     ))
 
     # --- UPSIDEDOWN ACUTE INNER HEPTAGRAM (Rotated) ---
-    # Adds a final layer of geometric depth with a slightly grey star
+    # Adds a final layer of geometric depth with a color matching the highest category
     inverted_angles = [(i * 3 * (360 / 7)) + (360 / 14) for i in range(8)]
+    
+    # Determine the color of the highest category
+    max_cat_key = max(avg_dna, key=avg_dna.get)
+    max_idx = cat_keys.index(max_cat_key)
+    max_hue = max_idx * (360 / 7)
+    
     fig.add_trace(go.Scatterpolar(
         r=[3.56] * 8, #2.175 = inner
         theta=inverted_angles,
         fill='toself',
-        fillcolor='rgba(150, 150, 150, 0.1)',
+        fillcolor=f'hsla({max_hue}, 80%, 55%, 0.15)',
         mode='lines',
         name="INVERTED HEPTAGRAM",
-        line=dict(color='rgba(150, 150, 150, 0.5)', width=1.5),
+        line=dict(color=f'hsla({max_hue}, 80%, 35%, 0.8)', width=1.5),
         showlegend=False,
         hoverinfo='skip'
     ))
