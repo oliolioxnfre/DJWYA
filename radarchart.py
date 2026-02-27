@@ -11,7 +11,7 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 
 
-def radarchart(artist_data_list, user_id):
+def radarchart(artist_data_list, user_id, scale=True, round_even=True):
     """
     artist_data_list: List of dicts like [{'name': 'Artist', 'dna': {...}, 'count': 5}]
     Renders a 7-axis heptagonal radar chart with a complete K7 graph overlay.
@@ -45,14 +45,25 @@ def radarchart(artist_data_list, user_id):
 
     # --- RELATIVE NORMALIZATION ---
     # Because averages flatten the shape, we scale the entire graph so the highest peak hits 10.
-    current_max = max(avg_dna.values())
-    if current_max > 0:
-        scaler = 10.0 / current_max
+    if scale:
+        current_max = max(avg_dna.values())
+        if current_max > 0:
+            scaler = 10.0 / current_max
+            for cat in categories:
+                avg_dna[cat] *= scaler
+                
+                if round_even:
+                    # Round to nearest even number (0, 2, 4, 6, 8, 10)
+                    avg_dna[cat] = round(avg_dna[cat] / 2.0) * 2
+    elif round_even:
         for cat in categories:
-            avg_dna[cat] *= scaler
-            
-            # Round to nearest even number (0, 2, 4, 6, 8, 10)
             avg_dna[cat] = round(avg_dna[cat] / 2.0) * 2
+
+    # Color Theme (using highest category for hue)
+    max_cat_key = max(avg_dna, key=avg_dna.get)
+    max_idx = categories.index(max_cat_key)
+    max_hue = max_idx * (360 / 7)
+    color_theme = 'rgba(155,155,155,0.4)' # Defaulting to grey as per user's starchart override
 
     # Plotly requires the first category to be repeated at the end to close the loop
     values = [avg_dna[cat] for cat in categories]
@@ -76,7 +87,7 @@ def radarchart(artist_data_list, user_id):
         theta=display_cats,
         mode='lines',
         name="Max Potential",
-        line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'),
+        line=dict(color=color_theme, width=5, dash='dash'),
     ))
 
     # --- OUTER COMPLETE GRAPH (K7) ---
@@ -118,7 +129,7 @@ def radarchart(artist_data_list, user_id):
     fig.show()
 
 
-def starchart(artist_data_list, user_id):
+def starchart(artist_data_list, user_id, scale=True, round_even=True):
     """
     Renders a 7-axis heptagonal star chart (spiky star geometry).
     Creates a 14-point path alternating between data values and origin (0).
@@ -151,15 +162,26 @@ def starchart(artist_data_list, user_id):
     for cat in cat_keys:
         avg_dna[cat] /= total_plays
     
-    current_max = max(avg_dna.values())
-    if current_max > 0:
-        scaler = 10.0 / current_max
+    if scale:
+        current_max = max(avg_dna.values())
+        if current_max > 0:
+            scaler = 10.0 / current_max
+            for cat in cat_keys:
+                avg_dna[cat] *= scaler
+                if round_even:
+                    # Round to nearest even number (0, 2, 4, 6, 8, 10)
+                    avg_dna[cat] = round(avg_dna[cat] / 2.0) * 2
+    elif round_even:
         for cat in cat_keys:
-            avg_dna[cat] *= scaler
-
-            # Round to nearest even number (0, 2, 4, 6, 8, 10)
             avg_dna[cat] = round(avg_dna[cat] / 2.0) * 2
 
+    # Color Theme
+    max_cat_key = max(avg_dna, key=avg_dna.get)
+    max_idx = cat_keys.index(max_cat_key)
+    max_hue = max_idx * (360 / 7)
+    color_theme = f'hsla({max_hue}, 60%, 35%, 0.8)'
+    color_theme = 'rgba(155,155,155,0.4)'
+    
     # --- GEOMETRY CALCULATION (14 points for a 7-pointed star) ---
     # We use alternating Peak (data value) and Valley (inner base)
     angles = []
@@ -188,6 +210,9 @@ def starchart(artist_data_list, user_id):
     # --- INDIVIDUAL COLORED DIAMONDS ---
     # We create 7 diamond shapes that meet at the center (r=0)
     hues = [i * (360 / 7) for i in range(7)]
+    max_cat_key = max(avg_dna, key=avg_dna.get)
+    max_idx = cat_keys.index(max_cat_key)
+    max_hue = max_idx * (360 / 7)
     
     for i, (cat, hue) in enumerate(zip(categories, hues)):
         peak_val = avg_dna[cat_keys[i]]
@@ -245,7 +270,7 @@ def starchart(artist_data_list, user_id):
         theta=outer_angles,
         mode='lines',
         name="MAX POTENTIAL",
-        line=dict(color='rgba(200, 200, 200, 0.8)', width=2, dash='dash'), #remove dash if you want
+        line=dict(color=color_theme, width=5), #remove dash if you want
     ))
 
     # --- ACUTE HEPTAGRAM {7/3} BACKGROUND STAR ---
@@ -256,7 +281,7 @@ def starchart(artist_data_list, user_id):
         theta=acute_angles,
         mode='lines',
         name="ACUTE HEPTAGRAM",
-        line=dict(color='rgba(200, 200, 200, 0.3)', width=2.8),
+        line=dict(color=color_theme, width=2.8),
         showlegend=False,
         hoverinfo='skip'
     ))
@@ -269,7 +294,7 @@ def starchart(artist_data_list, user_id):
         theta=obtuse_angles,
         mode='lines',
         name="OBTUSE HEPTAGRAM",
-        line=dict(color='rgba(200, 200, 200, 0.3)', width=1.0),
+        line=dict(color=color_theme, width=1.0),
         showlegend=False,
         hoverinfo='skip'
     ))
@@ -277,20 +302,14 @@ def starchart(artist_data_list, user_id):
     # --- UPSIDEDOWN ACUTE INNER HEPTAGRAM (Rotated) ---
     # Adds a final layer of geometric depth with a color matching the highest category
     inverted_angles = [(i * 3 * (360 / 7)) + (360 / 14) for i in range(8)]
-    
-    # Determine the color of the highest category
-    max_cat_key = max(avg_dna, key=avg_dna.get)
-    max_idx = cat_keys.index(max_cat_key)
-    max_hue = max_idx * (360 / 7)
-    
     fig.add_trace(go.Scatterpolar(
         r=[3.56] * 8, #2.175 = inner
         theta=inverted_angles,
         fill='toself',
-        fillcolor=f'hsla({max_hue}, 80%, 55%, 0.15)',
+        fillcolor='rgba(150, 150, 150, 0.1)',
         mode='lines',
         name="INVERTED HEPTAGRAM",
-        line=dict(color=f'hsla({max_hue}, 80%, 35%, 0.8)', width=1.5),
+        line=dict(color=color_theme, width=1.5),
         showlegend=False,
         hoverinfo='skip'
     ))
@@ -304,8 +323,8 @@ def starchart(artist_data_list, user_id):
                 direction='clockwise',
                 tickvals=[i * (360 / 7) for i in range(7)],
                 ticktext=categories,
-                gridcolor='rgba(255, 255, 255, 0.1)',
-                linecolor='rgba(255, 255, 255, 0.2)'
+                gridcolor=color_theme,
+                linecolor=color_theme
             ),
             bgcolor='rgba(0,0,0,0)'
         ),
