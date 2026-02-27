@@ -91,21 +91,38 @@ def check_sonic_dna(user_id):
     from radarchart import fetch_user_dna, radarchart, starchart
     dna = fetch_user_dna(user_id)
     if dna:
-        print("\n" + "="*40)
-        print("      🧬 DJWYA SONIC DNA 🧬")
-        print("="*40)
-        print(" 1. Radarchart")
-        print(" 2. Starchart")
-        print("-" * 40)
-        print(" 0. Go Back")
-        print("="*40)
-        select = input("\nSelect an option: ").strip()
-        if select == "1":
-            radarchart([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id)
-        elif select == "2":
-            starchart([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id)
-        elif select == "0":
-            return
+        # Default visualization settings
+        do_scale = True
+        do_round = True
+        
+        while True:
+            print("\n" + "="*40)
+            print("      🧬 DJWYA SONIC DNA 🧬")
+            print("="*40)
+            print(f" Settings: Scale={'[ON]' if do_scale else 'OFF'}, Rounding={'[ON]' if do_round else 'OFF'}")
+            print("-" * 40)
+            print(" 1. View Radarchart")
+            print(" 2. View Starchart")
+            print("-" * 40)
+            print(" 3. Toggle Scaling (Normalize peaks to 10)")
+            print(" 4. Toggle Rounding (Snap to nearest 2)")
+            print("-" * 40)
+            print(" 0. Go Back")
+            print("="*40)
+            
+            select = input("\nSelect tuning: ").strip()
+            if select == "1":
+                radarchart([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id, scale=do_scale, round_even=do_round)
+            elif select == "2":
+                starchart([{'name': 'My Profile', 'dna': dna, 'count': 1}], user_id, scale=do_scale, round_even=do_round)
+            elif select == "3":
+                do_scale = not do_scale
+            elif select == "4":
+                do_round = not do_round
+            elif select == "0":
+                break
+            else:
+                print("❌ Invalid option. Choose 0-4.")
     else:
         print("❌ No Sonic DNA found. Try adding a playlist first!")
 
