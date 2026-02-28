@@ -42,13 +42,26 @@ If you are switching accounts, please follow these steps to ensure I (in your ne
 ---
 
 ## 📝 Ongoing Tasks & TODOs
-- [ ] **Genre Taxonomy**: Use Spotify CSV's Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature to create a more accurate "Sonic DNA".
+
+- [ ] **Spotify Specific Track Data**: Use Spotify CSV's Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature to create a more accurate "Sonic DNA".
+- [ ] **Genre Taxonomy**: Use RYM's API to find the relationships (parent/child genres) and use that to create the new genre table in the database. We will do this by Pulling all Genres under EDM as well as their descriptions and filling the Genres Table in the DB.to be perfect so perfect my approach here:
+    0) a DB genres table & a DB genre_relationships table with the schema
+        genres: id, name, slug, aliases, description, sonic_dna
+        genre_relationships: genre_id, parent_genre_id, influence_genre_id
+    1) We call RYM's API to fill all EDM subgenres into the names column
+    2) For each of those genres we call RYM to feed the long description into the Description col
+    3) For each row with a description we call our LLM to process the data and come up with at least one direct parent genre and at most 2 parent genres. The LLM will also scan for at most 2 influences that are not the parent to fill the influences column with. BUT These parent/influence genres must already be in the database
 - [ ] **Multi-User Support**: Login and signup with Username/Password, Google SSO, and User Profile Pages. GOOGLE SSO FIRST!!
 - [ ] **Web Interface**: Transition from the CLI to a full React/Next.js frontend (planned).
     - [ ] **Landing Page**: Create a landing page for the website. DJWYA logo placed in the middle. Underneath the logo will be "EDM is for Everyone", but the "EDM" shifts to all the genres of music in the database. There Will be a button to login or signup.
     - [ ] **Login/Signup**: Create a login and signup page for users to create accounts and login.
     - [ ] **User Profile**: Create a user profile page to display user information and preferences.
-        - [ ] **Analytics**: Analytics will be displayed on the user page. At the forefront will be their Sonic DNA StarChart. Off to the side will be their top 25 artists and their top genres displayed in a sunburst chart with sections colored based on the bucket category of electronic music or even sonic DNA scores. One Idea is to have a multiple pie chart for each bucket category of electronic music. 
+        - [ ] **Analytics**: Analytics will be displayed on the user page. At the forefront will be their Sonic DNA StarChart. Off to the side will be their top 25 artists and their top genres displayed in a sunburst chart with sections colored based on the bucket category of electronic music or even sonic DNA scores. One Idea is to have a multiple pie chart for each bucket category of electronic music.
+    - [ ] **Genres Page**: Create a page to display all the genres of electronic music in the database. This page will be a force directed graph of all the genres of electronic music in the database. Specifically we will use RYM's API to find the relationships (parent/child genres) and use that to create the force directed graph. 
+    #MAYBE WILL ADD THIS LATER
+    - [ ] **Festival Map**: Create a map of the world with nodes (Cities/towns with festivals) being Larger based on the number of festivals in that city. When Clicking on a city/town, it will display all the festivals cards in that city/town in a google maps sort of styling.
+        - [ ] **Festival Card**: Create a festival card to display information about festivals. It will have the festival picture, name, date, location and user specific information like Hybrid Match Score and matching artists.
+    
     - [ ] **Playlist Ingestion**: Create a playlist ingestion page for users to upload playlists.
     - [ ] **Festival Discovery**: Only after the user has created an account, logged in, and given some data, have a festival discovery page to display festivals that match user preferences.
     - [ ] **Artist Lookups**: Create an artist lookup page to display information about artists.

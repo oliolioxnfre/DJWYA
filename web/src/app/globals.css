@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: var(--font-outfit), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  
+  --color-brand-purple: #8b5cf6; /* violet-500 */
+  --color-brand-pink: #ec4899; /* pink-500 */
+  --color-brand-neon: #ff00ff; /* Custom neon pink */
+  
+  --color-background-dark: #0a0a0a;
+  --color-foreground-light: #ededed;
+}
+
+@layer base {
+  :root {
+    --background: var(--color-background-dark);
+    --foreground: var(--color-foreground-light);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
