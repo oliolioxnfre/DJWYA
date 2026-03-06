@@ -159,7 +159,7 @@ export default function ForceGraph() {
                     if (!event.active) simulation.alphaTarget(0);
                     d.fx = null;
                     d.fy = null;
-                })
+                }) as any
             );
 
         nodeSelectionRef.current = node;
@@ -283,7 +283,7 @@ export default function ForceGraph() {
             <div ref={containerRef} className="w-full h-full" />
 
             {/* Legend / Mode Indicator */}
-            <div className="absolute top-6 left-6 pointer-events-none">
+            <div className="absolute top-36 left-6 pointer-events-none">
                 <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-3 text-[10px] text-gray-300">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-bold uppercase tracking-widest text-white/80">Interaction Mode</span>
