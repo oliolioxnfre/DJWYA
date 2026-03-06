@@ -798,8 +798,9 @@
   {
     "child_slug": "breakbeat-hardcore",
     "edges": [
-      { "parent_slug": "hardcore-techno", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "breakbeat", "edge_type": "parent", "weight": 0.90 }
+      { "parent_slug": "breakbeat", "edge_type": "parent", "weight": 0.90 },
+      { "parent_slug": "hardcore-techno", "edge_type": "influence", "weight": 0.85 },
+      { "parent_slug": "acid-house", "edge_type": "influence", "weight": 0.80 }
     ]
   },
   {
@@ -1241,12 +1242,7 @@
   },
   {
     "child_slug": "techno",
-    "edges": [
-      { "parent_slug": "detroit-techno", "edge_type": "parent", "weight": 0.95 },
-      { "parent_slug": "electro", "edge_type": "influence", "weight": 0.80 },
-      { "parent_slug": "ebm", "edge_type": "influence", "weight": 0.70 },
-      { "parent_slug": "berlin-school", "edge_type": "parent", "weight": 0.85 }
-    ]
+    "edges": []
   },
   {
     "child_slug": "wonky-techno",
