@@ -194,10 +194,11 @@ export default function ForceGraph() {
             node.style("opacity", n => ancestralNodeIds.has(n.id) ? 1 : 0.1);
             label.style("opacity", n => ancestralNodeIds.has(n.id) ? 1 : 0.1);
 
-            // Tooltip
-            tooltip
-                .style("visibility", "visible")
-                .html(`<strong>${d.name}</strong>${d.childCount > 0 ? `<br/><span style="font-size: 10px; color: #a855f7;">${d.childCount} subgenres</span>` : ''}`);
+            // Show Info Card on Hover
+            setSelectedNode(d);
+
+            // Hide old tooltip as info card replaces it
+            tooltip.style("visibility", "hidden");
         })
             .on("mousemove", (event) => {
                 tooltip
@@ -211,16 +212,13 @@ export default function ForceGraph() {
                 node.style("opacity", 1);
                 label.style("opacity", 1);
                 tooltip.style("visibility", "hidden");
+
+                // Hide Info Card on mouseout
+                setSelectedNode(null);
             });
 
 
-        // Interactivity: Click to show Info Card
-        node.on("click", (event, d) => {
-            event.stopPropagation();
-            setSelectedNode(d);
-        });
-
-        // Click on background to deselect
+        // Click on background to deselect (keeping as safety)
         svg.on("click", () => {
             setSelectedNode(null);
         });
@@ -291,10 +289,10 @@ export default function ForceGraph() {
             {/* Translucent Info Card */}
             {selectedNode && (
                 <div
-                    className="absolute top-6 right-6 w-80 max-h-[80%] overflow-y-auto animate-in fade-in slide-in-from-right-4 duration-300"
+                    className="absolute top-6 right-6 w-80 max-h-[80%] overflow-y-auto animate-in fade-in slide-in-from-right-4 duration-300 pointer-events-none"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-2xl text-white">
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-2xl text-white pointer-events-auto">
                         <div className="flex justify-between items-start mb-4">
                             <h2 className="text-2xl font-bold text-purple-400 tracking-tight">{selectedNode.name}</h2>
                             <button
