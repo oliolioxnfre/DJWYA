@@ -674,6 +674,16 @@
       { "parent_slug": "trance", "edge_type": "parent", "weight": 0.90 }
     ]
   },
+    {
+    "child_slug": "deconstructed-club",
+    "edges": [
+      { "parent_slug": "industrial", "edge_type": "parent", "weight": 0.85 },
+      { "parent_slug": "idm", "edge_type": "influence", "weight": 0.90 },
+      { "parent_slug": "ballroom", "edge_type": "influence", "weight": 0.90 },
+      { "parent_slug": "uk-bass", "edge_type": "influence", "weight": 0.90 },
+      { "parent_slug": "footwork", "edge_type": "influence", "weight": 0.90 }
+    ] 
+  },
   
   {
     "child_slug": "electronica",
