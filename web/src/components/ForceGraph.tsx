@@ -7,7 +7,9 @@ import * as d3 from 'd3';
 interface Node extends d3.SimulationNodeDatum {
     id: string;
     name: string;
+    description?: string;
     sonic_dna?: any;
+    childCount?: number;
 }
 
 interface Link extends d3.SimulationLinkDatum<Node> {
@@ -26,6 +28,7 @@ export default function ForceGraph() {
     const containerRef = useRef<HTMLDivElement>(null);
     const [data, setData] = useState<GraphData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
     useEffect(() => {
         // Fetch Graph Data
@@ -167,14 +170,14 @@ export default function ForceGraph() {
 
             const ancestralNodeIds = new Set<string>();
             const ancestralLinks = new Set<any>();
-            
+
             // Recursive function to find all ancestors
             const findAncestors = (nodeId: string) => {
                 ancestralNodeIds.add(nodeId);
                 links.forEach((l: any) => {
                     const sourceId = typeof l.source === 'string' ? l.source : l.source.id;
                     const targetId = typeof l.target === 'string' ? l.target : l.target.id;
-                    
+
                     if (sourceId === nodeId && !ancestralNodeIds.has(targetId)) {
                         ancestralLinks.add(l);
                         findAncestors(targetId);
@@ -211,6 +214,18 @@ export default function ForceGraph() {
             });
 
 
+        // Interactivity: Click to show Info Card
+        node.on("click", (event, d) => {
+            event.stopPropagation();
+            setSelectedNode(d);
+        });
+
+        // Click on background to deselect
+        svg.on("click", () => {
+            setSelectedNode(null);
+        });
+
+
         // Simulation Tick
         simulation.on("tick", () => {
             link
@@ -225,7 +240,7 @@ export default function ForceGraph() {
 
             label
                 .attr("x", d => d.x)
-                .attr("y", d => d.y);
+                .attr("y", n => n.y);
         });
 
         // Cleanup
@@ -269,5 +284,58 @@ export default function ForceGraph() {
         );
     }
 
-    return <div ref={containerRef} className="w-full h-full" />;
+    return (
+        <div className="relative w-full h-full overflow-hidden">
+            <div ref={containerRef} className="w-full h-full" />
+
+            {/* Translucent Info Card */}
+            {selectedNode && (
+                <div
+                    className="absolute top-6 right-6 w-80 max-h-[80%] overflow-y-auto animate-in fade-in slide-in-from-right-4 duration-300"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-2xl text-white">
+                        <div className="flex justify-between items-start mb-4">
+                            <h2 className="text-2xl font-bold text-purple-400 tracking-tight">{selectedNode.name}</h2>
+                            <button
+                                onClick={() => setSelectedNode(null)}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {selectedNode.childCount !== undefined && (
+                            <div className="mb-4 inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full">
+                                <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
+                                    {selectedNode.childCount} Subgenres
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
+                                <p className="text-sm text-gray-200 leading-relaxed font-light">
+                                    {selectedNode.description || "No description available for this genre."}
+                                </p>
+                            </div>
+
+                            {/* Potential for sonic DNA visual here later */}
+                            {selectedNode.sonic_dna && (
+                                <div className="pt-2">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Sonic DNA</h3>
+                                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-full bg-gradient-to-right from-purple-500 to-indigo-500 w-full opacity-50" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
