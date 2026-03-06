@@ -12,7 +12,7 @@ export async function GET() {
         // 1. Fetch all genres
         const { data: genres, error: genresError } = await supabaseAdmin
             .from('genres')
-            .select('id, name, sonic_dna');
+            .select('id, name, description, sonic_dna');
 
         if (genresError) throw genresError;
 
@@ -28,6 +28,7 @@ export async function GET() {
         const nodes = genres.map(g => ({
             id: g.id,
             name: g.name,
+            description: g.description,
             sonic_dna: g.sonic_dna
         }));
 

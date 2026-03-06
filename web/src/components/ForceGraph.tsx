@@ -160,33 +160,41 @@ export default function ForceGraph() {
             .style("pointer-events", "none")
             .style("z-index", "10");
 
-        // Interactivity: Hover to highlight connections
+        // Interactivity: Hover to highlight recursive ancestry path
         node.on("mouseover", (event, d) => {
             // Highlight Node
             d3.select(event.currentTarget).attr("fill", "#fbbf24").attr("r", getRadius(d) + 4);
 
-            // Filter linked nodes
-            const linkedNodeIds = new Set<string>();
-            linkedNodeIds.add(d.id);
+            const ancestralNodeIds = new Set<string>();
+            const ancestralLinks = new Set<any>();
+            
+            // Recursive function to find all ancestors
+            const findAncestors = (nodeId: string) => {
+                ancestralNodeIds.add(nodeId);
+                links.forEach((l: any) => {
+                    const sourceId = typeof l.source === 'string' ? l.source : l.source.id;
+                    const targetId = typeof l.target === 'string' ? l.target : l.target.id;
+                    
+                    if (sourceId === nodeId && !ancestralNodeIds.has(targetId)) {
+                        ancestralLinks.add(l);
+                        findAncestors(targetId);
+                    }
+                });
+            };
+
+            findAncestors(d.id);
 
             link
-                .style("stroke-opacity", l => {
-                    if (l.source.id === d.id || l.target.id === d.id) {
-                        linkedNodeIds.add(l.source.id);
-                        linkedNodeIds.add(l.target.id);
-                        return 1;
-                    }
-                    return (l.type === 'parent' ? 0.1 : 0);
-                })
-                .style("stroke-width", l => ((l.source.id === d.id || l.target.id === d.id) ? l.weight * 3 : l.weight));
+                .style("stroke-opacity", l => ancestralLinks.has(l) ? 1 : (l.type === 'parent' ? 0.05 : 0))
+                .style("stroke-width", l => ancestralLinks.has(l) ? Math.max(2, l.weight * 4) : Math.max(0.5, l.weight * 2));
 
-            node.style("opacity", n => linkedNodeIds.has(n.id) ? 1 : 0.2);
-            label.style("opacity", n => linkedNodeIds.has(n.id) ? 1 : 0.2);
+            node.style("opacity", n => ancestralNodeIds.has(n.id) ? 1 : 0.1);
+            label.style("opacity", n => ancestralNodeIds.has(n.id) ? 1 : 0.1);
 
             // Tooltip
             tooltip
                 .style("visibility", "visible")
-                .html(`<strong>${d.name}</strong>`);
+                .html(`<strong>${d.name}</strong>${d.childCount > 0 ? `<br/><span style="font-size: 10px; color: #a855f7;">${d.childCount} subgenres</span>` : ''}`);
         })
             .on("mousemove", (event) => {
                 tooltip
