@@ -67,9 +67,9 @@ def extract_edges_from_llm(genre_name, description, valid_names_str):
     
     for attempt in range(max_retries):
         try:
-            # Using 'gemini-flash-latest' which is 1.5 Flash and worked in testing
+            # Using gemini-flash-lite-latest for maximum free-tier throughput
             response = client.models.generate_content(
-                model='gemini-flash-latest',
+                model='gemini-flash-lite-latest',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -157,7 +157,8 @@ def main():
         
         # Rate Limiting
         # Rate Limiting for Free Tier
-        time.sleep(10) # 6 requests per minute (Limit is 15 but let's be safe)
+        # Aggressive Rate Limiting for Free Tier
+        time.sleep(20) # 3 requests per minute. This should effectively stop the 429s.
         
         count += 1
         if count >= 20: # Limit to 20 for testing

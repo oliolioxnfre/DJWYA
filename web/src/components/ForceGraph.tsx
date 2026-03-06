@@ -83,22 +83,45 @@ export default function ForceGraph() {
         const nodes = data.nodes.map(d => Object.create(d));
         const links = data.links.map(d => Object.create(d));
 
+        // Calculate children count for each node
+        const childCountMap: Record<string, number> = {};
+        links.forEach((l: any) => {
+            const parentId = typeof l.target === 'string' ? l.target : l.target.id;
+            childCountMap[parentId] = (childCountMap[parentId] || 0) + 1;
+        });
+
+        // Add childCount to nodes for easier access
+        nodes.forEach((n: any) => {
+            n.childCount = childCountMap[n.id] || 0;
+        });
+
         // Base Forces
         const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id((d: any) => d.id).distance(60))
-            .force("charge", d3.forceManyBody().strength(-150)) // Repel each other
+            .force("link", d3.forceLink(links).id((d: any) => d.id).distance(100)) // Increased from 60
+            .force("charge", d3.forceManyBody().strength(-300)) // Increased repulsion from -150
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("collide", d3.forceCollide().radius(20).iterations(2)); // Prevent overlap
+            .force("collide", d3.forceCollide().radius((d: any) => {
+                const baseRadius = 8;
+                const extraRadius = Math.sqrt(d.childCount || 0) * 4;
+                return baseRadius + extraRadius + 10; // Extra padding for separation
+            }).iterations(2)); // Prevent overlap
 
         // Draw Links
         const link = g.append("g")
-            .attr("stroke-opacity", 0.6)
             .selectAll("line")
             .data(links)
             .join("line")
             .attr("stroke", d => d.type === 'parent' ? "#6366f1" : "#10b981") // Indigo vs Emerald
             .attr("stroke-width", d => Math.max(0.5, d.weight * 2))
-            .attr("marker-end", d => `url(#${d.type})`);
+            .attr("marker-end", d => `url(#${d.type})`)
+            .style("stroke-opacity", d => (d.type === 'parent' ? 0.6 : 0)); // Hide influences by default
+
+        // Helper to calculate radius
+        const getRadius = (d: any) => {
+            const baseRadius = 8;
+            const extraRadius = Math.sqrt(d.childCount || 0) * 4;
+            return baseRadius + extraRadius;
+        };
 
         // Draw Nodes
         const node = g.append("g")
@@ -107,7 +130,7 @@ export default function ForceGraph() {
             .selectAll("circle")
             .data(nodes)
             .join("circle")
-            .attr("r", 8) // Base radius
+            .attr("r", d => getRadius(d))
             .attr("fill", "#a855f7") // Purple nodes
             .call(drag(simulation) as any);
 
@@ -118,7 +141,7 @@ export default function ForceGraph() {
             .join("text")
             .text(d => d.name)
             .attr("font-size", "10px")
-            .attr("dx", 12)
+            .attr("dx", (d: any) => getRadius(d) + 4)
             .attr("dy", 4)
             .attr("fill", "#e2e8f0") // Slate 200 text
             .attr("pointer-events", "none"); // Don't block hover events on nodes
@@ -140,7 +163,7 @@ export default function ForceGraph() {
         // Interactivity: Hover to highlight connections
         node.on("mouseover", (event, d) => {
             // Highlight Node
-            d3.select(event.currentTarget).attr("fill", "#fbbf24").attr("r", 12);
+            d3.select(event.currentTarget).attr("fill", "#fbbf24").attr("r", getRadius(d) + 4);
 
             // Filter linked nodes
             const linkedNodeIds = new Set<string>();
@@ -153,7 +176,7 @@ export default function ForceGraph() {
                         linkedNodeIds.add(l.target.id);
                         return 1;
                     }
-                    return 0.1;
+                    return (l.type === 'parent' ? 0.1 : 0);
                 })
                 .style("stroke-width", l => ((l.source.id === d.id || l.target.id === d.id) ? l.weight * 3 : l.weight));
 
@@ -170,10 +193,10 @@ export default function ForceGraph() {
                     .style("top", (event.pageY - 10) + "px")
                     .style("left", (event.pageX + 10) + "px");
             })
-            .on("mouseout", (event) => {
+            .on("mouseout", (event, d) => {
                 // Reset
-                d3.select(event.currentTarget).attr("fill", "#a855f7").attr("r", 8);
-                link.style("stroke-opacity", 0.6).style("stroke-width", l => Math.max(0.5, l.weight * 2));
+                d3.select(event.currentTarget).attr("fill", "#a855f7").attr("r", getRadius(d));
+                link.style("stroke-opacity", l => (l.type === 'parent' ? 0.6 : 0)).style("stroke-width", l => Math.max(0.5, l.weight * 2));
                 node.style("opacity", 1);
                 label.style("opacity", 1);
                 tooltip.style("visibility", "hidden");
