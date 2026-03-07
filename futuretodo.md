@@ -14,12 +14,30 @@ Find a way to automate festival playlists
     Idea 3: Use EDMTRAIN api to find festivals and then use moltbot to scrape each poster
 
 Website:
-    Make Homepage
-    Make signin
-    Make upload csv
-    Results page
-    Add user radar chart
-    Add festival radar char
+    Make Landing page ✅
+    Make signin ✅
+    Make upload csv ✅
+    Results page 
+    Dashboard
+        Add SonicDNA: radar chart/starchart
+    Festivals page:
+        Expanded Festival Card:
+            Add SonicDNA: chart/starchart sync visual
+            Add Visual on expansion
+            Add buy ticket button
+
+    Settings:
+        Username Changing
+        PFP Changing
+        Special Settings
+            Cursor Tracers
+            Font changes
+            Radar - Star chart toggle
+            
+
+Backend:
+    Fix genre aliases
+
 
 General future:
     Multithreaded sync

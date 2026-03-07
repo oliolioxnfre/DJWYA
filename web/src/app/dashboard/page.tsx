@@ -159,7 +159,8 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
                             <h3 className="text-xl font-bold mb-2">Import from Spotify</h3>
-                            <p className="text-zinc-400 text-sm mb-6">Upload your exported liked songs CSV to generate your Sonic DNA and find matching festivals.</p>
+                            <p className="text-zinc-400 text-sm mb-6">Go to exportify.net to export your playlist as a CSV and generate your Sonic DNA and find matching festivals</p>
+
                             <CsvDropzone onUploadComplete={() => {
                                 // Refresh DNA or UI state here later
                                 console.log("Upload complete, refreshing data...");
