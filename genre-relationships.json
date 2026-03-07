@@ -139,9 +139,7 @@
   {
     "child_slug": "hardcore-techno",
     "edges": [
-      { "parent_slug": "techno", "edge_type": "parent", "weight": 0.95 },
-      { "parent_slug": "hardcore-techno", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "industrial-techno", "edge_type": "influence", "weight": 0.65 }
+      { "parent_slug": "techno", "edge_type": "parent", "weight": 0.95 }
     ]
   },
   {
@@ -164,15 +162,15 @@
     "child_slug": "trip-hop",
     "edges": [
       { "parent_slug": "hip-hop", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "downtempo", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "dub", "edge_type": "influence", "weight": 0.75 }
+      { "parent_slug": "electronica", "edge_type": "parent", "weight": 0.80 },
+      { "parent_slug": "dub", "edge_type": "influence", "weight": 0.55 }
     ]
   },
   {
     "child_slug": "ambient-dub",
     "edges": [
       { "parent_slug": "ambient", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "dub", "edge_type": "parent", "weight": 0.90 }
+      { "parent_slug": "dub", "edge_type": "influence", "weight": 0.90 }
     ]
   },
   {
@@ -218,7 +216,6 @@
     "child_slug": "happy-hardcore",
     "edges": [
       { "parent_slug": "breakbeat-hardcore", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "hardcore-techno", "edge_type": "parent", "weight": 0.80 },
       { "parent_slug": "eurodance", "edge_type": "influence", "weight": 0.60 }
     ]
   },
@@ -281,8 +278,7 @@
   {
     "child_slug": "hi-nrg",
     "edges": [
-      { "parent_slug": "disco", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "synth-pop", "edge_type": "influence", "weight": 0.65 }
+      { "parent_slug": "nrg", "edge_type": "parent", "weight": 0.90 }
     ]
   },
   {
@@ -470,8 +466,7 @@
     "child_slug": "glitch",
     "edges": [
       { "parent_slug": "idm", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "industrial", "edge_type": "influence", "weight": 0.60 },
-      { "parent_slug": "ambient", "edge_type": "influence", "weight": 0.50 }
+      { "parent_slug": "electronica", "edge_type": "influence", "weight": 0.50 }
     ]
   },
   {
@@ -626,7 +621,8 @@
     ]
   },
   {
-    "child_slug": "electro"
+    "child_slug": "electro",
+    "edges": []
   },
   {
     "child_slug": "indietronica",
@@ -674,7 +670,13 @@
       { "parent_slug": "trance", "edge_type": "parent", "weight": 0.90 }
     ]
   },
-    {
+  {
+    "child_slug": "city-pop",
+    "edges": [
+      { "parent_slug": "synth-pop", "edge_type": "parent", "weight": 0.90 }
+    ]
+  },
+  {
     "child_slug": "deconstructed-club",
     "edges": [
       { "parent_slug": "industrial", "edge_type": "parent", "weight": 0.85 },
@@ -698,7 +700,7 @@
     "child_slug": "dark-ambient",
     "edges": [
       { "parent_slug": "ambient", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "industrial", "edge_type": "influence", "weight": 0.90 }
+      { "parent_slug": "industrial", "edge_type": "parent", "weight": 0.80 }
     ]
   },
   {
@@ -799,7 +801,7 @@
     "child_slug": "breakbeat-hardcore",
     "edges": [
       { "parent_slug": "breakbeat", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "hardcore-techno", "edge_type": "influence", "weight": 0.85 },
+      { "parent_slug": "hardcore-techno", "edge_type": "parent", "weight": 0.85 },
       { "parent_slug": "acid-house", "edge_type": "influence", "weight": 0.80 }
     ]
   },
@@ -925,9 +927,8 @@
   {
     "child_slug": "electro-house",
     "edges": [
-      { "parent_slug": "house", "edge_type": "parent", "weight": 0.95 },
-      { "parent_slug": "electro", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "synth-pop", "edge_type": "influence", "weight": 0.50 }
+      { "parent_slug": "house", "edge_type": "parent", "weight": 0.90 },
+      { "parent_slug": "electro", "edge_type": "parent", "weight": 0.80 }
     ]
   },
   {
@@ -1118,8 +1119,9 @@
     "child_slug": "idm",
     "edges": [
       { "parent_slug": "techno", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "breakbeat", "edge_type": "influence", "weight": 0.75 },
-      { "parent_slug": "ambient", "edge_type": "influence", "weight": 0.70 }
+      { "parent_slug": "electro", "edge_type": "parent", "weight": 0.75 },
+      { "parent_slug": "ambient", "edge_type": "influence", "weight": 0.70 },
+      { "parent_slug": "industrial", "edge_type": "influence", "weight": 0.70 }
     ]
   },
   {
@@ -1129,14 +1131,6 @@
       { "parent_slug": "hardcore-techno", "edge_type": "parent", "weight": 0.90 },
       { "parent_slug": "idm", "edge_type": "influence", "weight": 0.80 },
       { "parent_slug": "industrial", "edge_type": "influence", "weight": 0.60 }
-    ]
-  },
-  {
-    "child_slug": "birmingham-sound",
-    "edges": [
-      { "parent_slug": "techno", "edge_type": "parent", "weight": 0.95 },
-      { "parent_slug": "industrial-techno", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "minimal-techno", "edge_type": "influence", "weight": 0.70 }
     ]
   },
   {
@@ -1248,22 +1242,15 @@
     "child_slug": "wonky-techno",
     "edges": [
       { "parent_slug": "techno", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "birmingham-sound", "edge_type": "influence", "weight": 0.75 },
-      { "parent_slug": "glitch", "edge_type": "influence", "weight": 0.65 }
+      { "parent_slug": "wonky", "edge_type": "influence", "weight": 0.65 }
     ]
   },
   {
-    "child_slug": "breakbeat",
-    "edges": [
-      { "parent_slug": "electro", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "hip-hop", "edge_type": "influence", "weight": 0.80 },
-      { "parent_slug": "funk", "edge_type": "influence", "weight": 0.90 }
-    ]
+    "child_slug": "breakbeat"
   },
   {
     "child_slug": "deep-house",
     "edges": [
-      { "parent_slug": "house", "edge_type": "parent", "weight": 0.95 },
       { "parent_slug": "chicago-house", "edge_type": "parent", "weight": 0.90 },
       { "parent_slug": "jazz-funk", "edge_type": "influence", "weight": 0.75 }
     ]
@@ -1272,16 +1259,16 @@
     "child_slug": "baltimore-club",
     "edges": [
       { "parent_slug": "breakbeat", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "hip-hop", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "house", "edge_type": "influence", "weight": 0.70 }
+      { "parent_slug": "house", "edge_type": "parent", "weight": 0.70 }
     ]
   },
   {
     "child_slug": "outsider-house",
     "edges": [
-      { "parent_slug": "deep-house", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "lo-fi-hip-hop", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "techno", "edge_type": "influence", "weight": 0.60 }
+      { "parent_slug": "house", "edge_type": "parent", "weight": 0.90 },
+      { "parent_slug": "deep-house", "edge_type": "influence", "weight": 0.85 },
+      { "parent_slug": "lo-fi-hip-hop", "edge_type": "influence", "weight": 0.90 },
+      { "parent_slug": "techno", "edge_type": "parent", "weight": 0.60 }
     ]
   },
   {
@@ -1356,6 +1343,12 @@
     ]
   },
   {
+    "child_slug": "gabber",
+    "edges": [
+      { "parent_slug": "hardcore-techno", "edge_type": "parent", "weight": 0.90 }
+    ]
+  },
+  {
     "child_slug": "nu-style-gabber",
     "edges": [
       { "parent_slug": "gabber", "edge_type": "parent", "weight": 0.95 },
@@ -1386,7 +1379,6 @@
   {
     "child_slug": "nrg",
     "edges": [
-      { "parent_slug": "hi-nrg", "edge_type": "parent", "weight": 0.90 },
       { "parent_slug": "uk-hard-house", "edge_type": "parent", "weight": 0.85 },
       { "parent_slug": "euro-trance", "edge_type": "influence", "weight": 0.70 }
     ]
@@ -1446,15 +1438,31 @@
   {
     "child_slug": "witch-house",
     "edges": [
-      { "parent_slug": "dark-ambient", "edge_type": "parent", "weight": 0.70 },
-      { "parent_slug": "hard-trance", "edge_type": "parent", "weight": 0.60 }
+      { "parent_slug": "chopped-and-screwed", "edge_type": "parent", "weight": 0.90 },
+      { "parent_slug": "dark-ambient", "edge_type": "influence", "weight": 0.70 },
+      { "parent_slug": "darkwave", "edge_type": "influence", "weight": 0.80 }
+    ]
+  },
+  {
+    "child_slug": "chopped-and-screwed",
+    "edges": [
+      { "parent_slug": "hip-hop", "edge_type": "parent", "weight": 0.90 }
+    ]
+  },
+  {
+    "child_slug": "darkwave",
+    "edges": [
+      { "parent_slug": "synth-pop", "edge_type": "parent", "weight": 0.90 },
+      { "parent_slug": "industrial", "edge_type": "influence", "weight": 0.70 },
+      { "parent_slug": "dark-ambient", "edge_type": "influence", "weight": 0.50 }
     ]
   },
   {
     "child_slug": "chillout",
     "edges": [
-      { "parent_slug": "ambient", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "downtempo", "edge_type": "parent", "weight": 0.80 }
+      { "parent_slug": "downtempo", "edge_type": "parent", "weight": 0.80 },
+      { "parent_slug": "trip-hop", "edge_type": "influence", "weight": 0.70 }
+      
     ]
   },
   {
@@ -1492,10 +1500,7 @@
   {
     "child_slug": "french-house",
     "edges": [
-      { "parent_slug": "house", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "disco", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "disco", "edge_type": "influence", "weight": 0.70 },
-      { "parent_slug": "funk", "edge_type": "influence", "weight": 0.75 }
+      { "parent_slug": "house", "edge_type": "parent", "weight": 0.90 }
     ]
   },
   {
@@ -1649,9 +1654,7 @@
   {
     "child_slug": "glitch-hop",
     "edges": [
-      { "parent_slug": "hip-hop", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "glitch", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "idm", "edge_type": "influence", "weight": 0.70 }
+      { "parent_slug": "wonky", "edge_type": "parent", "weight": 0.90 }
     ]
   },
   {
@@ -1712,9 +1715,9 @@
   {
     "child_slug": "uk-bass",
     "edges": [
-      { "parent_slug": "uk-garage", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "dubstep", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "bass-house", "edge_type": "influence", "weight": 0.75 },
+      { "parent_slug": "dubstep", "edge_type": "parent", "weight": 0.90 },
+      { "parent_slug": "wonky", "edge_type": "influence", "weight": 0.80 },
+      { "parent_slug": "uk-garage", "edge_type": "influence", "weight": 0.70 },
       { "parent_slug": "grime", "edge_type": "influence", "weight": 0.70 }
     ]
   },
@@ -1814,19 +1817,11 @@
     ]
   },
   {
-    "child_slug": "guaracha",
-    "edges": [
-      { "parent_slug": "tribal-guarachero", "edge_type": "parent", "weight": 0.95 },
-      { "parent_slug": "electro-house", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "latin-house", "edge_type": "influence", "weight": 0.75 }
-    ]
-  },
-  {
     "child_slug": "wonky",
     "edges": [
       { "parent_slug": "hip-hop", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "glitch-hop", "edge_type": "parent", "weight": 0.85 },
-      { "parent_slug": "idm", "edge_type": "influence", "weight": 0.75 }
+      { "parent_slug": "glitch", "edge_type": "parent", "weight": 0.85 },
+      { "parent_slug": "uk-bass", "edge_type": "influence", "weight": 0.75 }
     ]
   },
   {
