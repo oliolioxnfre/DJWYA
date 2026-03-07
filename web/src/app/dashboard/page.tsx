@@ -17,6 +17,18 @@ export default function DashboardPage() {
                 router.replace("/");
             } else {
                 setSession(session);
+
+                // Check for username
+                supabase
+                    .from("users")
+                    .select("username")
+                    .eq("id", session.user.id)
+                    .single()
+                    .then(({ data: profile }) => {
+                        if (!profile?.username) {
+                            router.push("/onboarding");
+                        }
+                    });
             }
             setLoading(false);
         });

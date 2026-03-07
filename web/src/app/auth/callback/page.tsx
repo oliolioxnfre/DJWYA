@@ -21,15 +21,41 @@ export default function AuthCallbackPage() {
             }
 
             if (session) {
-                console.log("Session established! Redirecting to dashboard...");
-                router.push("/dashboard");
+                console.log("Session established! Checking for profile...");
+
+                // Add a small check for username
+                const { data: profile, error: profileError } = await supabase
+                    .from("users")
+                    .select("username")
+                    .eq("id", session.user.id)
+                    .single();
+
+                if (profileError || !profile?.username) {
+                    console.log("No username found. Redirecting to onboarding...");
+                    router.push("/onboarding");
+                } else {
+                    console.log("Username found. Redirecting to dashboard...");
+                    router.push("/dashboard");
+                }
             } else {
                 // If there's no session and the hash hasn't been processed yet, 
                 // there's a chance auth state change listener will catch it.
-                const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+                const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
                     if (event === "SIGNED_IN" && session) {
                         subscription.unsubscribe();
-                        router.push("/dashboard");
+
+                        // Check profile here too
+                        const { data: profile } = await supabase
+                            .from("users")
+                            .select("username")
+                            .eq("id", session.user.id)
+                            .single();
+
+                        if (!profile?.username) {
+                            router.push("/onboarding");
+                        } else {
+                            router.push("/dashboard");
+                        }
                     }
                 });
             }
