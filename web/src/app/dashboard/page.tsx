@@ -8,6 +8,7 @@ import { Session } from "@supabase/supabase-js";
 
 export default function DashboardPage() {
     const [session, setSession] = useState<Session | null>(null);
+    const [username, setUsername] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -25,7 +26,9 @@ export default function DashboardPage() {
                     .eq("id", session.user.id)
                     .single()
                     .then(({ data: profile }) => {
-                        if (!profile?.username) {
+                        if (profile?.username) {
+                            setUsername(profile.username);
+                        } else {
                             router.push("/onboarding");
                         }
                     });
@@ -68,7 +71,7 @@ export default function DashboardPage() {
                                 Dashboard
                             </h1>
                             <p className="text-sm text-zinc-400">
-                                Welcome back, {session?.user?.user_metadata?.full_name || session?.user?.email}
+                                Welcome back, {username ? `${username}` : (session?.user?.user_metadata?.full_name || session?.user?.email)}
                             </p>
                         </div>
                     </div>
@@ -112,8 +115,8 @@ export default function DashboardPage() {
                             />
                         )}
                         <div>
-                            <h3 className="text-xl font-bold">{session?.user?.user_metadata?.full_name}</h3>
-                            <p className="text-zinc-400 text-sm">Ravers Elite</p>
+                            <h3 className="text-xl font-bold">{username ? `${username}` : session?.user?.user_metadata?.full_name}</h3>
+                            <p className="text-zinc-400 text-sm">Big Time Baller</p>
                         </div>
                     </div>
                 </section>
