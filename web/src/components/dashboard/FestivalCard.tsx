@@ -113,25 +113,34 @@ export default function FestivalCard({
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{
-                        opacity: 1,
-                        y: isExpanded ? "-50%" : "0%",
-                        scale: 1,
-                        top: isExpanded ? "50%" : "auto",
-                        bottom: isExpanded ? "auto" : "2rem",
-                        left: "50%",
-                        x: "-50%",
-                        width: isExpanded ? "90%" : "100%",
-                        maxWidth: isExpanded ? "36rem" : "28rem",
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[1000] flex flex-col items-center px-4 sm:px-0 pointer-events-none"
+                    style={{
+                        justifyContent: isExpanded ? "center" : "flex-end",
+                        paddingBottom: isExpanded ? "0" : "2rem"
                     }}
-                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                    transition={{ duration: 0.4, type: "spring", damping: 25, stiffness: 200 }}
-                    className="fixed z-[1000] px-4 sm:px-0"
                 >
                     {/* Glassmorphic Container */}
-                    <div className={`relative overflow-hidden rounded-[2.5rem] bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl text-white transition-all duration-500 flex flex-col ${isExpanded ? 'h-[85vh]' : 'max-h-none'}`}>
-
+                    <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                            scale: 1,
+                            width: isExpanded ? "90%" : "100%",
+                            maxWidth: isExpanded ? "36rem" : "28rem",
+                        }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        transition={{
+                            layout: { type: "spring", damping: 25, stiffness: 200 },
+                            opacity: { duration: 0.2 },
+                            scale: { duration: 0.4 }
+                        }}
+                        className={`relative overflow-hidden rounded-[2.5rem] bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl text-white flex flex-col pointer-events-auto ${isExpanded ? 'h-[85vh]' : 'max-h-none'}`}
+                    >
                         {/* Top Bar (Stationary) */}
                         <div className="p-8 pb-4 shrink-0 border-b border-white/5 bg-black/20">
                             <div className="flex justify-between items-start">
@@ -186,12 +195,14 @@ export default function FestivalCard({
                             </div>
 
                             {/* Expansion Details */}
-                            <AnimatePresence>
+                            <AnimatePresence mode="wait">
                                 {isExpanded && (
                                     <motion.div
+                                        key="expanded-content"
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: "auto" }}
                                         exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
                                         className="space-y-8 pt-4 border-t border-white/5"
                                     >
                                         {/* Size and Type Info */}
@@ -303,7 +314,7 @@ export default function FestivalCard({
                                 <ChevronRight className="w-5 h-5" />
                             </button>
                         </div>
-                    </div>
+                    </motion.div>
 
                     <style jsx global>{`
             .custom-scrollbar::-webkit-scrollbar {
