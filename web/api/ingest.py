@@ -17,6 +17,7 @@ root_dir = os.path.dirname(parent_dir)
 sys.path.append(root_dir)
 
 from artists_categorize import bulk_categorize_artists, sync_artists_to_supabase
+from compare import run_matching_engine
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -81,6 +82,20 @@ async def ingest_music_data(payload: IngestRequest):
 
         return {"status": "success", "message": f"Successfully processed {len(final_artists)} artists.", "processed_count": len(final_artists)}
 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/festivals")
+async def get_festivals(user_id: str):
+    try:
+        if not user_id:
+            raise HTTPException(status_code=400, detail="user_id is required")
+        
+        results = run_matching_engine(user_id)
+        # Results might be empty if user has no data, that's fine
+        return {"status": "success", "data": results or []}
     except Exception as e:
         import traceback
         traceback.print_exc()

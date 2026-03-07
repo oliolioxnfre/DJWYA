@@ -32,9 +32,9 @@ def get_user_data(user_id="demo_user"):
     return None
 
 def get_all_festivals():
-    """Fetches all festivals including lineup, sonic_dna, and subgenres."""
+    """Fetches all festivals including lineup, sonic_dna, subgenres, and coordinates."""
     print("Fetching festivals...")
-    response = supabase.table("festivals").select("name, lineup, sonic_dna, subgenres").execute()
+    response = supabase.table("festivals").select("name, lineup, sonic_dna, subgenres, lat, lng").execute()
     return response.data
 
 def cosine_similarity(vec1, vec2):
@@ -148,7 +148,9 @@ def run_matching_engine(user_id="demo_user"):
             'synergy_match': synergy_percentage,
             'matched_count': len(overlap),
             'total_artists': len(lineup_set),
-            'shared_artists': [name.title() for name in sorted_overlap] 
+            'shared_artists': [name.title() for name in sorted_overlap],
+            'lat': fest.get('lat'),
+            'lng': fest.get('lng')
         })
         
     match_scores.sort(key=lambda x: x['total_match'], reverse=True)
