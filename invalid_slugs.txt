@@ -1,5 +1,5 @@
 Fetching valid slugs from database...
-Fetched 270 valid slugs.
+Fetched 269 valid slugs.
 Validating genre-relationships.json...
 ------------------------------
 Success! All slugs are valid.

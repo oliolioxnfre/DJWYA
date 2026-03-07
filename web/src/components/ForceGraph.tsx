@@ -7,8 +7,10 @@ import * as d3 from 'd3';
 interface Node extends d3.SimulationNodeDatum {
     id: string;
     name: string;
+    slug?: string;
     description?: string;
     sonic_dna?: any;
+    color?: string;
     childCount?: number;
 }
 
@@ -100,13 +102,13 @@ export default function ForceGraph() {
             .attr("fill", d => d === 'parent' ? "#6366f1" : "#10b981")
             .attr("opacity", 0.6);
 
-        // Prep Data
-        const nodes: Node[] = data.nodes.map(d => Object.create(d));
-        const links: Link[] = data.links.map(d => Object.create(d));
+        // Prep Data - Use spread for own properties, safer for D3/React
+        const nodes: Node[] = data.nodes.map(d => ({ ...d }));
+        const links: Link[] = data.links.map(d => ({ ...d }));
 
         const childCountMap: Record<string, number> = {};
         links.forEach((l: any) => {
-            const parentId = typeof l.target === 'string' ? l.target : l.target.id;
+            const parentId = typeof l.target === 'string' ? l.target : (l.target as any).id;
             childCountMap[parentId] = (childCountMap[parentId] || 0) + 1;
         });
 
@@ -114,12 +116,101 @@ export default function ForceGraph() {
             n.childCount = childCountMap[n.id] || 0;
         });
 
+        const GHOST_ROOT_COLOR = '#888888';
+
+        // Build adjacency list (child_id -> [parent_ids])
+        const parentMap: Record<string, string[]> = {};
+        links.forEach((l: any) => {
+            if (l.type === 'parent') {
+                const sourceId = typeof l.source === 'string' ? l.source : (l.source as any).id;
+                const targetId = typeof l.target === 'string' ? l.target : (l.target as any).id;
+
+                if (!parentMap[sourceId]) parentMap[sourceId] = [];
+                parentMap[sourceId].push(targetId);
+            }
+        });
+
+        // Memoized Color & Depth Computation (DFS)
+        const colorCache: Record<string, { color: string, depth: number }> = {};
+
+        const computeNodeAppearance = (nodeId: string, visited = new Set<string>()): { color: string, depth: number } => {
+            if (colorCache[nodeId]) return colorCache[nodeId];
+
+            if (visited.has(nodeId)) return { color: GHOST_ROOT_COLOR, depth: 10 };
+            visited.add(nodeId);
+
+            const thisNode = nodes.find(n => n.id === nodeId);
+            const parentIds = parentMap[nodeId] || [];
+
+            // Case A: Hardcoded Pillar in DB (Any node with a 'color' set in Supabase)
+            if (thisNode?.color) {
+                const result = { color: thisNode.color, depth: 0 };
+                colorCache[nodeId] = result;
+                return result;
+            }
+
+            // Case B: Ghost Root (No parents and no color assigned)
+            if (parentIds.length === 0) {
+                const result = { color: GHOST_ROOT_COLOR, depth: 0 };
+                colorCache[nodeId] = result;
+                return result;
+            }
+
+            // Case C: Inheritance
+            const parentResults = parentIds.map(pId => computeNodeAppearance(pId, new Set(visited)));
+
+            // Filter out Ghost Roots for mixing unless ONLY ghost roots exist
+            const coloredParents = parentResults.filter(r => r.color !== GHOST_ROOT_COLOR);
+            const mixSources = coloredParents.length > 0 ? coloredParents : parentResults;
+
+            // Depth is minimum distance to a root
+            const depth = Math.min(...mixSources.map(r => r.depth)) + 1;
+
+            // Blend colors in LAB space
+            let finalColor = mixSources[0].color;
+            if (mixSources.length > 1) {
+                const labs = mixSources.map(s => d3.lab(s.color));
+                const mixed = d3.lab(
+                    labs.reduce((sum, l) => sum + l.l, 0) / labs.length,
+                    labs.reduce((sum, l) => sum + l.a, 0) / labs.length,
+                    labs.reduce((sum, l) => sum + l.b, 0) / labs.length
+                );
+                finalColor = mixed.formatHex();
+            }
+
+            const result = { color: finalColor, depth };
+            colorCache[nodeId] = result;
+            return result;
+        };
+
+        // Apply computation to all nodes
+        nodes.forEach((n: any) => {
+            const { color, depth } = computeNodeAppearance(n.id);
+
+            // 5. Hierarchical Fading (The Depth Rule)
+            // Roots = 100% saturation/luminance. Deeper = desaturated/darker.
+            if (color !== GHOST_ROOT_COLOR) {
+                const hsl = d3.hsl(color);
+                // Cap depth effect so it doesn't go totally black (max depth effect = 5)
+                const depthFactor = Math.min(depth, 5);
+
+                // Reduce Luminance slightly (from ~0.5 down to ~0.3)
+                hsl.l = Math.max(0.3, hsl.l - (depthFactor * 0.04));
+                // Reduce Saturation slightly
+                hsl.s = Math.max(0.4, hsl.s - (depthFactor * 0.08));
+
+                n.computedColor = hsl.formatHex();
+            } else {
+                n.computedColor = GHOST_ROOT_COLOR;
+            }
+        });
+
         // Initialize Simulation
         const simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id((d: any) => d.id).distance(100))
             .force("charge", d3.forceManyBody().strength(-300))
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("collide", d3.forceCollide().radius((d: any) => getRadius(d) + 10).iterations(2));
+            .force("collide", d3.forceCollide().radius((d: any) => getRadius(d) + 12).iterations(3)); // increased padding
 
         simulationRef.current = simulation;
 
@@ -131,19 +222,19 @@ export default function ForceGraph() {
             .attr("stroke", d => d.type === 'parent' ? "#6366f1" : "#10b981")
             .attr("stroke-width", d => Math.max(0.5, d.weight * 2))
             .attr("marker-end", d => `url(#${d.type})`)
-            .style("stroke-opacity", d => (d.type === 'parent' ? 0.6 : 0));
+            .style("stroke-opacity", d => (d.type === 'parent' ? 0.3 : 0)); // Lower baseline opacity for links
 
         linkSelectionRef.current = link;
 
         // 2. Draw Nodes
         const node = g.append("g")
-            .attr("stroke", "#fff")
-            .attr("stroke-width", 1.5)
+            .attr("stroke", "#0f0f13") // Dark stroke matches bg
+            .attr("stroke-width", 2)
             .selectAll("circle")
             .data(nodes)
             .join("circle")
             .attr("r", d => getRadius(d))
-            .attr("fill", "#a855f7")
+            .attr("fill", (d: any) => d.computedColor)
             .style("cursor", "pointer")
             .call(d3.drag<SVGCircleElement, any>()
                 .on("start", (event, d) => {
@@ -170,10 +261,12 @@ export default function ForceGraph() {
             .data(nodes)
             .join("text")
             .text(d => d.name)
-            .attr("font-size", "10px")
-            .attr("dx", d => getRadius(d) + 4)
+            .attr("font-size", (d: any) => d.childCount > 5 ? "12px" : "9px") // Dynamic font size based on importance
+            .attr("font-weight", (d: any) => d.childCount > 5 ? "bold" : "normal")
+            .attr("dx", d => getRadius(d) + 5)
             .attr("dy", 4)
-            .attr("fill", "#e2e8f0")
+            .attr("fill", (d: any) => d.computedColor) // Text matches node color for cohesion
+            .style("opacity", 0.8)
             .attr("pointer-events", "none");
 
         labelSelectionRef.current = label;
@@ -218,10 +311,10 @@ export default function ForceGraph() {
         const label = labelSelectionRef.current;
 
         if (!hoveredNode) {
-            // Reset to default state
-            node.attr("fill", "#a855f7").attr("r", (d: any) => getRadius(d)).style("opacity", 1);
-            link.style("stroke-opacity", (l: any) => l.type === 'parent' ? 0.6 : 0).style("stroke-width", (l: any) => Math.max(0.5, l.weight * 2));
-            label.style("opacity", 1);
+            // Reset to default state - USE COMPUTED COLORS
+            node.attr("fill", (n: any) => n.computedColor).attr("r", (d: any) => getRadius(d)).style("opacity", 1);
+            link.style("stroke-opacity", (l: any) => l.type === 'parent' ? 0.3 : 0).style("stroke-width", (l: any) => Math.max(0.5, l.weight * 2));
+            label.style("opacity", 1).attr("fill", (n: any) => n.computedColor);
             return;
         }
 
@@ -231,14 +324,24 @@ export default function ForceGraph() {
         highlightedNodeIds.add(hoveredNode.id);
 
         if (highlightMode === 'ancestry') {
-            const findAncestors = (nodeId: string) => {
+            const findAncestors = (nodeId: string, parentsOnly = false) => {
                 link.each(function (l: any) {
-                    const sourceId = typeof l.source === 'string' ? l.source : l.source.id;
-                    const targetId = typeof l.target === 'string' ? l.target : l.target.id;
-                    if (sourceId === nodeId && !highlightedNodeIds.has(targetId)) {
-                        highlightedNodeIds.add(targetId);
-                        highlightedLinks.add(l);
-                        findAncestors(targetId);
+                    const sourceId = typeof l.source === 'string' ? l.source : (l.source as any).id;
+                    const targetId = typeof l.target === 'string' ? l.target : (l.target as any).id;
+                    if (sourceId === nodeId) {
+                        if (l.type === 'parent') {
+                            if (!highlightedNodeIds.has(targetId)) {
+                                highlightedNodeIds.add(targetId);
+                                highlightedLinks.add(l);
+                                findAncestors(targetId, true); // Continue recursion for parents
+                            }
+                        } else if (l.type === 'influence' && !parentsOnly) {
+                            // Only highlight direct influences of the hovered node, do NOT recurse
+                            if (!highlightedNodeIds.has(targetId)) {
+                                highlightedNodeIds.add(targetId);
+                                highlightedLinks.add(l);
+                            }
+                        }
                     }
                 });
             };
@@ -257,12 +360,12 @@ export default function ForceGraph() {
 
         // Apply visual changes to selections
         node
-            .attr("fill", (n: any) => n.id === hoveredNode.id ? "#fbbf24" : "#a855f7")
+            .attr("fill", (n: any) => n.id === hoveredNode.id ? "#fbbf24" : n.computedColor)
             .attr("r", (n: any) => getRadius(n) + (n.id === hoveredNode.id ? 4 : 0))
-            .style("opacity", (n: any) => highlightedNodeIds.has(n.id) ? 1 : 0.1);
+            .style("opacity", (n: any) => highlightedNodeIds.has(n.id) ? 1 : 0.15); // slightly higher opacity for non-highlighted
 
         link
-            .style("stroke-opacity", (l: any) => highlightedLinks.has(l) ? 1 : (l.type === 'parent' ? 0.05 : 0))
+            .style("stroke-opacity", (l: any) => highlightedLinks.has(l) ? 0.8 : (l.type === 'parent' ? 0.05 : 0))
             .style("stroke-width", (l: any) => highlightedLinks.has(l) ? Math.max(2, l.weight * 4) : Math.max(0.5, l.weight * 2));
 
         label.style("opacity", (n: any) => highlightedNodeIds.has(n.id) ? 1 : 0.1);
