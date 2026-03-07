@@ -36,7 +36,7 @@ def interactive_user_sync():
         try:
             print(f"Attempting to add user '{username}'...")
             # We use insert() here to specifically trigger conflicts if username/email are unique
-            response = supabase.table("public.users").insert(user_data).execute()
+            response = supabase.table("users").insert(user_data).execute()
             
             if response.data:
                 print(f"✅ SUCCESS: Created user {username} ({user_id})")

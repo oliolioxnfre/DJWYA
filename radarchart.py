@@ -339,7 +339,7 @@ def starchart(artist_data_list, user_id, scale=True, round_even=True):
 
 def fetch_user_dna(user_id):
     supabase: Client = create_client(url, key)
-    res = supabase.table("public.users").select("sonic_dna").eq("id", user_id).execute()
+    res = supabase.table("users").select("sonic_dna").eq("id", user_id).execute()
     if res.data and res.data[0].get('sonic_dna'):
         return res.data[0]['sonic_dna']
     return None

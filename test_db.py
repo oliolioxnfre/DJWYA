@@ -17,5 +17,5 @@ VibeClassifier.update_user_dna("db65253d-6643-4607-8988-7770f0193a13")
 
 # Query the updated user dna
 supabase: Client = create_client(url, key)
-res = supabase.table("public.users").select("sonic_dna").eq("id", "db65253d-6643-4607-8988-7770f0193a13").execute()
+res = supabase.table("users").select("sonic_dna").eq("id", "db65253d-6643-4607-8988-7770f0193a13").execute()
 print(f"\nUser's Sonic DNA: {res.data[0]['sonic_dna'] if res.data else 'Not Found'}")

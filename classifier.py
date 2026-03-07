@@ -302,7 +302,7 @@ class VibeClassifier:
         user_subgenres = cls.extract_top_subgenres(full_artist_info_list, limit=25)
         
         # Update the user's data in the database
-        supabase.table("public.users").update({
+        supabase.table("users").update({
             "sonic_dna": user_dna,
             "subgenres": user_subgenres
         }).eq("id", user_id).execute()

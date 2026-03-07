@@ -26,7 +26,7 @@ def get_user_artists(user_id="demo_user"):
 
 def get_user_data(user_id="demo_user"):
     """Fetches the user's aggregate Sonic DNA and Subgenres."""
-    response = supabase.table("public.users").select("sonic_dna, subgenres").eq("id", user_id).execute()
+    response = supabase.table("users").select("sonic_dna, subgenres").eq("id", user_id).execute()
     if response.data:
         return response.data[0]
     return None

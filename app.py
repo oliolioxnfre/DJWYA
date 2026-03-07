@@ -35,8 +35,8 @@ def add_playlist(user_id):
         break
 
     # Ask the user if they want to filter for electronic music only
-    filter_input = input("🔍 Filter for electronic artists only? (y/n, default: y): ").strip().lower()
-    filter_choice = filter_input != 'n' # Default to True unless 'n' is explicitly entered
+    filter_input = input("🔍 Filter for electronic artists only? (y/n, default: n): ").strip().lower()
+    filter_choice = filter_input == 'y' # Default to False unless 'y' is explicitly entered
 
     electronic_artists = {}
     artist_requests = []
@@ -81,7 +81,7 @@ def reset_user_taste(user_id):
     answer = input("Are you sure you want to reset your taste? (y/n): ").strip().lower()
     if answer == "y":
         supabase.table("user_lib").delete().eq("user_id", user_id).execute()
-        supabase.table("public.users").update({"sonic_dna": None}).eq("id", user_id).execute()
+        supabase.table("users").update({"sonic_dna": None}).eq("id", user_id).execute()
         print(f"🧹 Taste reset for user {user_id}")
     else:
         print("❌ Taste not reset")
@@ -198,7 +198,7 @@ def main_loop():
             
         if not username: continue
         
-        response = supabase.table("public.users").select("id").eq("username", username).execute()
+        response = supabase.table("users").select("id").eq("username", username).execute()
         if not response.data:
             print(f"❌ User '{username}' not found. Use user.py to create one.")
             continue

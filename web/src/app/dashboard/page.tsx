@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Session } from "@supabase/supabase-js";
+import { CsvDropzone } from "@/components/dashboard/CsvDropzone";
 
 export default function DashboardPage() {
     const [session, setSession] = useState<Session | null>(null);
@@ -45,6 +46,38 @@ export default function DashboardPage() {
 
         return () => subscription.unsubscribe();
     }, [router]);
+
+    const handleResetTaste = async () => {
+        const confirmed = window.confirm("Are you sure you want to reset your taste? This will wipe your library data and Sonic DNA.");
+        if (!confirmed || !session?.user) return;
+
+        try {
+            setLoading(true);
+            // Delete from user_lib
+            const { error: libError } = await supabase
+                .from("user_lib")
+                .delete()
+                .eq("user_id", session.user.id);
+
+            if (libError) throw libError;
+
+            // Update user's sonic_dna and subgenres to null
+            const { error: userError } = await supabase
+                .from("users")
+                .update({ sonic_dna: null, subgenres: null })
+                .eq("id", session.user.id);
+
+            if (userError) throw userError;
+
+            // Simple reload to refresh all states
+            window.location.reload();
+        } catch (err: any) {
+            console.error("Error resetting taste:", err);
+            alert("Failed to reset taste. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -117,6 +150,35 @@ export default function DashboardPage() {
                         <div>
                             <h3 className="text-xl font-bold">{username ? `${username}` : session?.user?.user_metadata?.full_name}</h3>
                             <p className="text-zinc-400 text-sm">Big Time Baller</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mt-8">
+                    <h2 className="text-2xl font-bold font-heading mb-6 border-b border-white/10 pb-4">Manage Library</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
+                            <h3 className="text-xl font-bold mb-2">Import from Spotify</h3>
+                            <p className="text-zinc-400 text-sm mb-6">Upload your exported liked songs CSV to generate your Sonic DNA and find matching festivals.</p>
+                            <CsvDropzone onUploadComplete={() => {
+                                // Refresh DNA or UI state here later
+                                console.log("Upload complete, refreshing data...");
+                            }} />
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md flex flex-col items-center justify-center text-center">
+                            <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20 mb-4 text-red-500">
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-bold mb-2 text-white">Reset Taste</h3>
+                            <p className="text-zinc-400 text-sm mb-6">Wipe your entire library and start fresh with a new Sonic DNA profile.</p>
+                            <button
+                                onClick={handleResetTaste}
+                                className="px-6 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-full transition-all font-medium text-sm"
+                            >
+                                Reset My Profile
+                            </button>
                         </div>
                     </div>
                 </section>
