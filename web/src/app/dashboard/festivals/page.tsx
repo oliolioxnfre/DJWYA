@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, AlertCircle, Compass } from "lucide-react";
+import { Loader2, AlertCircle, Compass, Home } from "lucide-react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import FestivalCard, { FestivalData } from "@/components/dashboard/FestivalCard";
 import type { MapBoxProps } from "@/components/dashboard/MapBox";
@@ -27,6 +28,7 @@ export default function FestivalsPage() {
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
     const [isCardOpen, setIsCardOpen] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
         async function loadFestivals() {
@@ -54,7 +56,13 @@ export default function FestivalsPage() {
                 const mappedMatches = (json.data || []).map((f: any) => ({
                     ...f,
                     lat: f.lat ? parseFloat(f.lat) : null,
-                    lng: f.lng ? parseFloat(f.lng) : null
+                    lng: f.lng ? parseFloat(f.lng) : null,
+                    // Ensure metadata fields are passed through
+                    location: f.location,
+                    date: f.date,
+                    size: f.size,
+                    type: f.type,
+                    fest_subgenres: f.fest_subgenres
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 })).filter((f: any) => f.lat !== null && f.lng !== null);
 
@@ -96,8 +104,7 @@ export default function FestivalsPage() {
 
     const handleCloseCard = () => {
         setIsCardOpen(false);
-        // Determine if want to unselect marker or keep it centered
-        // We'll leave index selected so MapUpdater doesn't flip back to zoom 4 if not needed
+        setIsExpanded(false);
     };
 
     const handleSelectFestival = (idx: number) => {
@@ -130,8 +137,17 @@ export default function FestivalsPage() {
 
     return (
         <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#0a0a0a]">
-            {/* Background Map Layer */}
-            <div className="absolute inset-0">
+            {/* Home Navigation */}
+            <Link
+                href="/dashboard"
+                className="absolute top-6 left-6 z-[1001] p-3 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-white hover:bg-white/10 transition-all shadow-2xl group active:scale-95 flex items-center justify-center"
+                title="Back to Dashboard"
+            >
+                <Home className="w-5 h-5 group-hover:text-purple-400 transition-colors" />
+            </Link>
+
+            {/* Background Map Layer with Dynamic Blur */}
+            <div className={`absolute inset-0 transition-all duration-700 ease-in-out ${isExpanded ? 'blur-xl scale-105 opacity-40' : 'blur-0 scale-100 opacity-100'}`}>
                 <MapBox
                     festivals={festivals}
                     selectedIndex={isCardOpen ? selectedIndex : -1}
@@ -148,7 +164,7 @@ export default function FestivalsPage() {
                             Festival Finder
                         </h1>
                         <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                            We've scanned the globe to find festivals matching your Sonic DNA.
+                            We&apos;ve scanned the globe to find festivals matching your Sonic DNA.
                             Ready to see where your artists are playing?
                         </p>
                         <button
@@ -168,7 +184,7 @@ export default function FestivalsPage() {
                     <div className="bg-black border border-white/10 rounded-2xl p-8 text-center max-w-sm">
                         <h2 className="text-xl font-bold text-white mb-2">No Matches Found</h2>
                         <p className="text-gray-400 text-sm">
-                            We couldn't find any festivals matching your library. Make sure your taste profile is synced!
+                            We couldn&apos;t find any festivals matching your library. Make sure your taste profile is synced!
                         </p>
                     </div>
                 </div>
@@ -184,6 +200,7 @@ export default function FestivalsPage() {
                     onNext={handleNext}
                     onPrev={handlePrev}
                     onClose={handleCloseCard}
+                    onExpandChange={setIsExpanded}
                 />
             )}
         </div>
