@@ -1118,10 +1118,9 @@
   {
     "child_slug": "idm",
     "edges": [
-      { "parent_slug": "techno", "edge_type": "parent", "weight": 0.80 },
-      { "parent_slug": "electro", "edge_type": "parent", "weight": 0.75 },
-      { "parent_slug": "ambient", "edge_type": "influence", "weight": 0.70 },
-      { "parent_slug": "industrial", "edge_type": "influence", "weight": 0.70 }
+      { "parent_slug": "electronica", "edge_type": "parent", "weight": 0.80 },
+      { "parent_slug": "ambient-techno", "edge_type": "parent", "weight": 0.70 },
+      { "parent_slug": "breakbeat", "edge_type": "influence", "weight": 0.70 }
     ]
   },
   {
@@ -1661,8 +1660,7 @@
     "child_slug": "ambient-techno",
     "edges": [
       { "parent_slug": "techno", "edge_type": "parent", "weight": 0.95 },
-      { "parent_slug": "ambient", "edge_type": "parent", "weight": 0.90 },
-      { "parent_slug": "idm", "edge_type": "influence", "weight": 0.75 }
+      { "parent_slug": "ambient", "edge_type": "parent", "weight": 0.90 }
     ]
   },
   {

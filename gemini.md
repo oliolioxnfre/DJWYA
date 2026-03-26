@@ -53,17 +53,16 @@ If you are switching accounts, please follow these steps to ensure I (in your ne
     3) For each row with a description we call our LLM to process the data and come up with at least one direct parent genre and at most 2 parent genres. The LLM will also scan for at most 2 influences that are not the parent to fill the influences column with. BUT These parent/influence genres must already be in the database
 
 - [ ] **Web Interface**: Transition from the CLI to a full React/Next.js frontend (planned).
-    - [ ] **Landing Page**: Create a landing page for the website. DJWYA logo placed in the middle. Underneath the logo will be "EDM is for Everyone", but the "EDM" shifts to all the genres of music in the database. There Will be a button to login or signup.
-    - [ ] **Login/Signup**: Make it so that after google SSO login, the user is prompted for a display name and a profile picture.
+    - [✅] **Landing Page**: Create a landing page for the website. DJWYA logo placed in the middle. Underneath the logo will be "EDM is for Everyone", but the "EDM" shifts to all the genres of music in the database. There Will be a button to login or signup.
+    - [✅] **Login/Signup**: Make it so that after google SSO login, the user is prompted for a display name and a profile picture.
     - [ ] **User Profile**: Create a user profile page to display user information and preferences.
         - [ ] **Analytics**: Analytics will be displayed on the user page. At the forefront will be their Sonic DNA StarChart. Off to the side will be their top 25 artists and their top genres displayed in a sunburst chart with sections colored based on the bucket category of electronic music or even sonic DNA scores. One Idea is to have a multiple pie chart for each bucket category of electronic music.
-    - [ ] **Genres Page**: Create a page to display all the genres of electronic music in the database. This page will be a force directed graph of all the genres of electronic music in the database.
-    #MAYBE WILL ADD THIS LATER
-    - [ ] **Festival Map**: Create a map of the world with nodes (Cities/towns with festivals) being Larger based on the number of festivals in that city. When Clicking on a city/town, it will display all the festivals cards in that city/town in a google maps sort of styling.
-        - [ ] **Festival Card**: Create a festival card to display information about festivals. It will have the festival picture, name, date, location and user specific information like Hybrid Match Score and matching artists.
-    
-    - [ ] **Playlist Ingestion**: Create a playlist ingestion page for users to upload playlists.
-    - [ ] **Festival Discovery**: Only after the user has created an account, logged in, and given some data, have a festival discovery page to display festivals that match user preferences.
+    - [✅] **Genres Page**: Create a page to display all the genres of electronic music in the database. This page will be a force directed graph of all the genres of electronic music in the database.
+
+    - [✅] **Festival Map**: Create a map of the world with nodes (Cities/towns with festivals) being Larger based on the number of festivals in that city. When Clicking on a city/town, it will display all the festivals cards in that city/town in a google maps sort of styling.
+        - [✅] **Festival Card**: Create a festival card to display information about festivals. It will have the festival picture, name, date, location and user specific information like Hybrid Match Score and matching artists.
+    - [✅] **Playlist Ingestion**: Create a playlist ingestion page for users to upload playlists.
+    - [✅] **Festival Discovery**: Only after the user has created an account, logged in, and given some data, have a festival discovery page to display festivals that match user preferences.
     - [ ] **Artist Lookups**: Create an artist lookup page to display information about artists.
     - [ ] **Artist Pages**: Create an artist page to display information about artists, including their genres, festivals they are playing, and their sonic DNA StarChart.
 - [ ] **Poster Scraping Automation**: Integrate EDMTRAIN API for with openclaw for automated festival discovery, and use openclaw to scrape festival posters for DJ names.

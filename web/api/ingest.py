@@ -104,4 +104,4 @@ async def get_festivals(user_id: str):
 if __name__ == "__main__":
     import uvicorn
     # Typically run with: uvicorn web.api.ingest:app --reload
-    uvicorn.run(app, host="0.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
