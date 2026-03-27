@@ -25,7 +25,7 @@ export default function Home() {
 
         <div className="flex flex-col items-center space-y-6 pt-12">
           <p className="text-zinc-400 max-w-lg text-lg text-center font-sans">
-            Discover your Sonic DNA and find the festivals that match your exact vibe.
+            Discover new festivals, genres and artists that match your exact vibe.
           </p>
           <LoginButton />
         </div>

@@ -1,11 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { Session } from "@supabase/supabase-js";
 import { CsvDropzone } from "@/components/dashboard/CsvDropzone";
+import Header from "@/components/dashboard/Header";
 
 export default function DashboardPage() {
     const [session, setSession] = useState<Session | null>(null);
@@ -88,33 +90,11 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-8 md:p-12 font-sans">
+        <div className="min-h-screen bg-black text-white p-8 md:p-12 pt-32 md:pt-40 font-sans">
             <div className="max-w-7xl mx-auto space-y-12">
-                <header className="flex justify-between items-center border-b border-white/10 pb-6">
-                    <div className="flex items-center gap-6">
-                        <Image
-                            src="/logo.png"
-                            alt="DJWYA Logo"
-                            width={80}
-                            height={80}
-                            className="drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]"
-                        />
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-black font-heading tracking-tight uppercase">
-                                Dashboard
-                            </h1>
-                            <p className="text-sm text-zinc-400">
-                                Welcome back, {username ? `${username}` : (session?.user?.user_metadata?.full_name || session?.user?.email)}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => supabase.auth.signOut()}
-                        className="px-6 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors text-sm font-medium"
-                    >
-                        Sign Out
-                    </button>
-                </header>
+                <Header />
+
+
 
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="col-span-1 md:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">

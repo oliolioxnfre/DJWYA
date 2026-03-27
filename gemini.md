@@ -43,6 +43,16 @@ If you are switching accounts, please follow these steps to ensure I (in your ne
 
 ## 📝 Ongoing Tasks & TODOs
 
+- [ ] **Refactoring the Genres**: As it stands currently, all artists genres are stored in the artists table as jsonb in the genres column. We want to move this to a new table called artist_genres in order to allow for more flexibility and scalability. Specifically, artist_genres will have a column for the artist_id, genre_id, and vote_count. By default, we will initialize the vote_count to 5. But since artist_genres will have a foreign key to the genres table, we need to make sure that we build a funneling system in order to keep aliases (dnb d&B drumnbass) from being their own genre. After pulling the genres from last.fm, we will use our funneler to funnel only the correct genres into the artist_genres table. Duplicates must be handled. If the artist is already in the artists table, we dont do anything because that means the proper genres have already been funneled into the artist_genres table. 
+    - [ ] ****: I want to change it to specifically to work like this:
+        - 1: Pull genre info from last.fm
+        - 2: Check if 
+
+
+- [ ] **Refactoring the Genres**: 
+
+- [ ] **Artist Pages**: Create an artist page to display information about artists, including their genres, festivals they are playing, and their sonic DNA StarChart.
+
 - [ ] **Spotify Specific Track Data**: Use Spotify CSV's Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature to create a more accurate "Sonic DNA".
 - [ ] **Genre Taxonomy**: Use RYM's API to find the relationships (parent/child genres) and use that to create the new genre table in the database. We will do this by Pulling all Genres under EDM as well as their descriptions and filling the Genres Table in the DB.to be perfect so perfect my approach here:
     0) a DB genres table & a DB genre_relationships table with the schema
@@ -63,7 +73,7 @@ If you are switching accounts, please follow these steps to ensure I (in your ne
         - [✅] **Festival Card**: Create a festival card to display information about festivals. It will have the festival picture, name, date, location and user specific information like Hybrid Match Score and matching artists.
     - [✅] **Playlist Ingestion**: Create a playlist ingestion page for users to upload playlists.
     - [✅] **Festival Discovery**: Only after the user has created an account, logged in, and given some data, have a festival discovery page to display festivals that match user preferences.
-    - [ ] **Artist Lookups**: Create an artist lookup page to display information about artists.
+    - [✅] **Artist Lookups**: Create an artist lookup page to display information about artists.
     - [ ] **Artist Pages**: Create an artist page to display information about artists, including their genres, festivals they are playing, and their sonic DNA StarChart.
 - [ ] **Poster Scraping Automation**: Integrate EDMTRAIN API for with openclaw for automated festival discovery, and use openclaw to scrape festival posters for DJ names.
 - [ ] **API Intergration**: Eventual Support of Spotify, Apple Music, Anghami, Tencent Music, Deezer, Soundcloud.

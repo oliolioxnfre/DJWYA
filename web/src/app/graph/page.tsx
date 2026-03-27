@@ -1,5 +1,6 @@
 import ForceGraph from '@/components/ForceGraph';
 import { Metadata } from 'next';
+import Header from '@/components/dashboard/Header';
 
 export const metadata: Metadata = {
     title: 'Sonic Universe | DJWYA',
@@ -12,17 +13,17 @@ export default function GenresPage() {
             {/* Background ambient light */}
             <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none z-0" />
 
-            {/* Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 p-6 z-10 pointer-events-none flex justify-between items-start">
-                <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400 drop-shadow-md pb-1">
-                        Sonic Universe
-                    </h1>
-                    <p className="text-gray-400 text-sm mt-1 max-w-md drop-shadow-md">
-                        Interactive map of electronic music genres and their relationships.
-                        Drag nodes, scroll to zoom, and hover to reveal parental and influential roots.
-                    </p>
-                </div>
+            <Header />
+
+            {/* Sub-header Overlay */}
+            <div className="absolute top-24 left-8 z-10 pointer-events-none flex flex-col">
+                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400 drop-shadow-md pb-1">
+                    Sonic Universe
+                </h2>
+                <p className="text-gray-400 text-sm mt-1 max-w-md drop-shadow-md">
+                    Interactive map of electronic music genres and their relationships.
+                    Drag nodes, scroll to zoom, and hover to reveal parental and influential roots.
+                </p>
             </div>
 
             {/* Graph Container */}
