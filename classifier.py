@@ -2,13 +2,18 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+import threading
+
 class GenreManager:
     _instance = None
+    _lock = threading.Lock()
     
     @classmethod
     def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
+        with cls._lock:
+            if cls._instance is None:
+                print("🧬 Initializing GenreManager Singleton...")
+                cls._instance = cls()
         return cls._instance
         
     def __init__(self):
@@ -30,8 +35,13 @@ class GenreManager:
             
             self.slug_to_id[slug] = row.get("id")
             
-            if row.get("sonic_dna"):
-                self.slug_to_dna[slug] = row.get("sonic_dna")
+            dna = row.get("sonic_dna")
+            # Only count as 'proper' DNA if it is a dict and has our 7 axes
+            if dna and isinstance(dna, dict):
+                # We define categories here to avoid circular dependencies with VibeClassifier
+                cats = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']
+                if any(cat in dna for cat in cats):
+                    self.slug_to_dna[slug] = dna
                 
             # A genre is electronic if "non-electronic" is NOT True
             self.slug_to_electronic[slug] = not row.get("non-electronic", False)
@@ -80,6 +90,7 @@ class VibeClassifier:
         for g in genres:
             slug = manager.get_canonical_slug(g)
             # Only use genres that actually have a sonic_dna mapped in the DB
+            # and verify it is a valid dictionary
             if slug in manager.slug_to_dna and slug not in active_slugs:
                 active_slugs.append(slug)
         
@@ -88,12 +99,20 @@ class VibeClassifier:
             
         vectors = [manager.slug_to_dna[slug] for slug in active_slugs]
         
+        # Calculate weights based on order (first match gets more weight)
         weights = [1.0 / (i + 1) for i in range(len(vectors))]
         total_weight = sum(weights)
         
+        if total_weight == 0:
+            return None
+        
         avg_vibe = {}
         for category in cls.CATEGORIES:
-            weighted_sum = sum(v.get(category, 0.0) * w for v, w in zip(vectors, weights))
+            # Defensive check: ensure v is a dict and has the category
+            weighted_sum = sum(
+                (v.get(category, 0.0) if isinstance(v, dict) else 0.0) * w 
+                for v, w in zip(vectors, weights)
+            )
             avg_vibe[category] = weighted_sum / total_weight
         
         return {k: round(v, 2) for k, v in avg_vibe.items()}
@@ -127,6 +146,12 @@ class VibeClassifier:
                 if g and g.get("slug"):
                     genres.append(g["slug"])
             
+            full_artist_info_list.append({
+                'name': name,
+                'genres': genres,
+                'count': play_count
+            })
+            
             if dna and isinstance(dna, dict):
                 if all(cat in dna for cat in cls.CATEGORIES):
                     artist_data_list.append({
@@ -134,20 +159,21 @@ class VibeClassifier:
                         'dna': dna,
                         'count': play_count
                     })
-                    full_artist_info_list.append({
-                        'name': name,
-                        'genres': genres,
-                        'count': play_count
-                    })
         
         user_dna = cls.calculate_user_dna(artist_data_list)
         user_subgenres = cls.extract_top_subgenres(full_artist_info_list)
         
-        supabase.table("users").update({
-            "sonic_dna": user_dna,
-            "subgenres": user_subgenres
-        }).eq("id", user_id).execute()
+        print(f"📡 Syncing {len(user_subgenres)} subgenres to user profile...")
+        try:
+            supabase.table("users").update({
+                "sonic_dna": user_dna,
+                "subgenres": user_subgenres
+            }).eq("id", user_id).execute()
+        except Exception as e:
+            print(f"❌ Error updating user DNA in database: {e}")
+            raise e
         
+        print(f"✅ Successfully updated DNA for {user_id}.")
         return artist_data_list
 
     @classmethod
@@ -237,7 +263,9 @@ class VibeClassifier:
             mapped_subgenres = []
             for g in genres:
                 slug = manager.get_canonical_slug(g)
-                if slug in manager.slug_to_dna and slug not in mapped_subgenres:
+                # Include all electronic subgenres in the distribution, 
+                # even if we don't have DNA coordinates for them yet.
+                if manager.is_electronic(slug) and slug not in mapped_subgenres:
                     mapped_subgenres.append(slug)
             
             if not mapped_subgenres:

@@ -12,6 +12,9 @@ LASTFM_API_SECRET = os.environ.get("LASTFM_API_SECRET")
 # Initialize the network
 network = pylast.LastFMNetwork(api_key=LASTFM_API_KEY, api_secret=LASTFM_API_SECRET)
 
+# Pre-initialize GenreManager to avoid thread-safety issues during bulk process
+GenreManager.get_instance()
+
 # Cache to prevent doing redundant Last.fm API calls
 artist_genre_cache = {}
 
@@ -26,8 +29,8 @@ def get_artist_genres(artist_name):
         return artist_genre_cache[artist_name]
     try:
         artist = network.get_artist(artist_name)
-        # Get all top tags (no limit)
-        top_tags = artist.get_top_tags()
+        # Get a generous amount of tags (limit 50 to avoid extreme cases)
+        top_tags = artist.get_top_tags(limit=50)
         # Lowercase and replace spaces with dashes for normalization
         genres = [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
         artist_genre_cache[artist_name] = genres
