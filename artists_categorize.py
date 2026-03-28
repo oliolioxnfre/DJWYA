@@ -94,9 +94,13 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
     if not existing_data and supabase_client:
         slug = artist_name.lower().replace(" ", "-")
         try:
-            res = supabase_client.table("artists").select("*").eq("name_slug", slug).execute()
+            # Fetch with new nested genre logic
+            res = supabase_client.table("artists").select("*, artist_genres(genres(slug))").eq("name_slug", slug).execute()
             if res.data:
                 existing_data = res.data[0]
+                # Un-nest genres
+                ag_list = existing_data.get("artist_genres") or []
+                existing_data['genres'] = [ag['genres']['slug'] for ag in ag_list if ag.get('genres') and ag['genres'].get('slug')]
         except Exception:
             pass # Fall back to Last.fm if DB fails
 
@@ -171,9 +175,12 @@ def bulk_categorize_artists(artist_requests, supabase_client=None, max_workers=1
         for i in range(0, len(all_slugs), 500):
             batch_slugs = all_slugs[i:i+500]
             try:
-                res = supabase_client.table("artists").select("*").in_("name_slug", batch_slugs).execute()
+                res = supabase_client.table("artists").select("*, artist_genres(genres(slug))").in_("name_slug", batch_slugs).execute()
                 if res.data:
                     for row in res.data:
+                        # Un-nest genres
+                        ag_list = row.get("artist_genres") or []
+                        row['genres'] = [ag['genres']['slug'] for ag in ag_list if ag.get('genres') and ag['genres'].get('slug')]
                         existing_map[row["name_slug"]] = row
             except Exception as e:
                 print(f"⚠️ Warning: Bulk lookup failed: {e}")
@@ -220,7 +227,7 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
         artist_metadata_map[name_slug] = {
             "name": item['name'],
             "name_slug": name_slug,
-            "genres": item.get('genres', []),
+            # DEPRECATED: "genres": item.get('genres', []),
             "vibe_bucket": item.get('vibe_bucket', []),
             "sonic_dna": item.get('sonic_dna', {})
         }
@@ -251,18 +258,98 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
         else:
             inserts.append(payload)
             
-    # 4. Perform Bulk DB Writes
+    # 4. Prepare Canonical Map for Funneler
+    canonical_map = {}
+    alias_dict = {
+        "dnb": "drum-and-bass", "d&b": "drum-and-bass", "drumnbass": "drum-and-bass",
+        "drum n bass": "drum-and-bass", "deep house": "deep-house", "tech house": "tech-house",
+        "progressive house": "progressive-house", "house music": "house", "techno music": "techno",
+    }
+    try:
+        genres_res = supabase_client.table("genres").select("id, slug, aliases").execute()
+        for grow in genres_res.data:
+            gid = grow["id"]
+            gslug = grow["slug"]
+            if gslug:
+                canonical_map[gslug] = gid
+            aliases = grow.get("aliases")
+            if aliases and isinstance(aliases, list):
+                for alias in aliases:
+                    alower = alias.lower().strip()
+                    if alower not in alias_dict:
+                        alias_dict[alower] = gslug
+    except Exception as e:
+        print(f"⚠️ Warning: Failed to fetch canonical map for funneler: {e}")
+
+    # 5. Perform Bulk DB Writes
     try:
         if inserts:
             res = supabase_client.table("artists").insert(inserts).execute()
-            # Catch the new IDs so we can use them for the library logic
+            # Catch the new IDs
             if res.data:
                 for row in res.data:
                     existing_slug_to_id[row["name_slug"]] = row["id"]
-                    
+        
         if updates:
-            # Upsert acts as a bulk update if the ID is provided and exists
             supabase_client.table("artists").upsert(updates).execute()
+
+        # 6. Synchronize artist_genres (for ALL processed artists)
+        artist_genres_payloads = []
+        for name_slug, item in artist_metadata_map.items():
+            artist_id = existing_slug_to_id.get(name_slug)
+            if not artist_id: continue
+            
+            # Use original genres from artist_dict
+            raw_genres = item.get("genres", [])
+            if not raw_genres:
+                # If metadata_map didn't have them, try artist_dict directly
+                # (though they should be the same)
+                orig_item = next((v for v in artist_dict.values() if v['name'].lower().replace(" ", "-") == name_slug), {})
+                raw_genres = orig_item.get("genres", [])
+
+            seen_slugs = set()
+            if raw_genres and isinstance(raw_genres, list):
+                for raw in raw_genres:
+                    cleaned = raw.lower().strip()
+                    if not cleaned: continue
+                    mapped_slug = alias_dict.get(cleaned, cleaned)
+                    mapped_slug = mapped_slug.replace(" ", "-")
+                    final_slug = alias_dict.get(mapped_slug, mapped_slug)
+                    genre_id = canonical_map.get(final_slug)
+                    
+                    if genre_id and genre_id not in seen_slugs:
+                        seen_slugs.add(genre_id)
+                        artist_genres_payloads.append({
+                            "artist_id": artist_id,
+                            "genre_id": genre_id,
+                            "vote_count": 5
+                        })
+
+        if artist_genres_payloads:
+            try:
+                # 1. Fetch existing mappings for these artists to avoid duplicates
+                processed_artist_ids = list(set(p['artist_id'] for p in artist_genres_payloads))
+                existing_mappings = []
+                for i in range(0, len(processed_artist_ids), 500):
+                    batch_ids = processed_artist_ids[i:i+500]
+                    res = supabase_client.table("artist_genres").select("artist_id, genre_id").in_("artist_id", batch_ids).execute()
+                    if res.data:
+                        existing_mappings.extend(res.data)
+                
+                existing_set = set((m['artist_id'], m['genre_id']) for m in existing_mappings)
+                
+                # 2. Only insert the missing ones
+                to_insert = [p for p in artist_genres_payloads if (p['artist_id'], p['genre_id']) not in existing_set]
+                
+                if to_insert:
+                    ag_batch_size = 500
+                    for i in range(0, len(to_insert), ag_batch_size):
+                        batch = to_insert[i:i+ag_batch_size]
+                        supabase_client.table("artist_genres").insert(batch).execute()
+                        
+            except Exception as e:
+                print(f"❌ Error syncing artist_genres: {e}")
+
     except Exception as e:
         print(f"❌ Error during bulk artist write: {e}")
 

@@ -44,6 +44,11 @@ If you are switching accounts, please follow these steps to ensure I (in your ne
 ## 📝 Ongoing Tasks & TODOs
 
 - [ ] **Refactoring the Genres**: As it stands currently, all artists genres are stored in the artists table as jsonb in the genres column. We want to move this to a new table called artist_genres in order to allow for more flexibility and scalability. Specifically, artist_genres will have a column for the artist_id, genre_id, and vote_count. By default, we will initialize the vote_count to 5. But since artist_genres will have a foreign key to the genres table, we need to make sure that we build a funneling system in order to keep aliases (dnb d&B drumnbass) from being their own genre. After pulling the genres from last.fm, we will use our funneler to funnel only the correct genres into the artist_genres table. Duplicates must be handled. If the artist is already in the artists table, we dont do anything because that means the proper genres have already been funneled into the artist_genres table. 
+
+
+After this I need you to pull all the sonic DNA data for all the genres that I hardcoded in the classifier.py file and put them into the genres table in the database. 
+
+Now that thats done I need you to finally refactor the rest of the program to use the new artist_genres table rather than the old genres column in the artists table 
     - [ ] ****: I want to change it to specifically to work like this:
         - 1: Pull genre info from last.fm
         - 2: Check if 

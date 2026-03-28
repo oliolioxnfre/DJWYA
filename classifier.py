@@ -266,8 +266,8 @@ class VibeClassifier:
         supabase: Client = create_client(url, key)
         print(f"Fetching sonic DNA and play counts for {user_id}...")
         # We ask for the user_lib row, but ALSO tell Supabase 
-        # to look up the name and sonic_dna from the artists table.
-        response = supabase.table("user_lib").select("count, artists(name, sonic_dna, genres)").eq("user_id", user_id).execute()
+        # to look up the name, sonic_dna, and its genres through artist_genres
+        response = supabase.table("user_lib").select("count, artists(name, sonic_dna, artist_genres(genres(slug)))").eq("user_id", user_id).execute()
         artist_data_list = []
         full_artist_info_list = [] # For subgenre extraction
         
@@ -279,7 +279,15 @@ class VibeClassifier:
                 
             dna = artist_info.get("sonic_dna")
             name = artist_info.get("name", "Unknown Artist")
-            genres = artist_info.get("genres", [])
+            
+            # Extract genres from junction table format
+            genres = []
+            ag_list = artist_info.get("artist_genres") or []
+            for ag in ag_list:
+                g = ag.get("genres")
+                if g and g.get("slug"):
+                    genres.append(g["slug"])
+            
             
             if dna and isinstance(dna, dict):
                 # Only add if it has all the standard categories
@@ -321,7 +329,7 @@ class VibeClassifier:
         
         print("🔄 Fetching all artists from database...")
         # Note: using 'id' to ensure we update the correct row precisely
-        response = supabase.table("artists").select("id, name, name_slug, genres").execute()
+        response = supabase.table("artists").select("id, name, name_slug, artist_genres(genres(slug))").execute()
         artists = response.data
         
         if not artists:
@@ -332,7 +340,13 @@ class VibeClassifier:
         updates = []
         
         for artist in artists:
-            genres = artist.get('genres', [])
+            ag_list = artist.get("artist_genres") or []
+            genres = []
+            for ag in ag_list:
+                g = ag.get("genres")
+                if g and g.get("slug"):
+                    genres.append(g["slug"])
+                    
             if not genres:
                 continue
                 
