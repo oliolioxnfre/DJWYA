@@ -2,7 +2,7 @@ import pylast
 import os
 import concurrent.futures
 from dotenv import load_dotenv
-from classifier import GenreClassifier, VibeClassifier
+from classifier import VibeClassifier, GenreManager
 
 load_dotenv()
 
@@ -12,69 +12,22 @@ LASTFM_API_SECRET = os.environ.get("LASTFM_API_SECRET")
 # Initialize the network
 network = pylast.LastFMNetwork(api_key=LASTFM_API_KEY, api_secret=LASTFM_API_SECRET)
 
-# Cache to prevent doing redundant Last.FM API calls
+# Cache to prevent doing redundant Last.fm API calls
 artist_genre_cache = {}
-
-electronic_genres = [
-    # --- PARENT: HOUSE ---
-    'house', 'deep-house', 'tech-house', 'progressive-house', 'future-house', 
-    'bass-house', 'tropical-house', 'electro-house', 'acid-house', 'g-house', 
-    'afro-house', 'organic-house', 'chicago-house', 'disco-house', 'nu-disco', 
-    'lo-fi-house', 'funky-house', 'hard-house', 'jazz-house', 'rally-house', 
-    'melodic-house', 'speed-house', 'ghetto-house', 'witch-house',
-    'future-funk', 'liquid-funk', 'digicore', 'french-house', 'chiptune', 'breakbeat',
-    'uk-garage', 'melodic-dubstep', 'garage',
-
-    # --- PARENT: TECHNO ---
-    'techno', 'minimal-techno', 'hard-techno', 'acid-techno', 'dub-techno', 
-    'detroit-techno', 'peak-time-techno', 'industrial-techno', 'melodic-techno', 
-    'dark-techno', 'hypnotic-techno', 'cyber-house',
-
-    # --- PARENT: TRANCE ---
-    'trance', 'uplifting-trance', 'psytrance', 'progressive-trance', 'goa-trance', 
-    'vocal-trance', 'tech-trance', 'dream-trance', 'hard-trance', 'hypertrance', 
-    'neotrance', 'acid-trance',
-
-    # --- PARENT: DRUM AND BASS ---
-    'drum-and-bass', 'drum-n-bass', 'liquid-dnb', 'neurofunk', 'jump-up', 'jungle', 
-    'breakcore', 'halftime-dnb', 'techstep', 'darkstep', 'atmospheric-dnb', 'dnb',
-    'atmospheric-jungle',
-
-    # --- PARENT: BASS MUSIC & DUBSTEP ---
-    'dubstep', 'riddim', 'brostep', 'future-bass', 'j-core', 'trap', 'wave', 
-    'glitch-hop', 'color-bass', 'melodic-dubstep', 'deathstep', 'uk-garage', 
-    'speed-garage', '2-step', 'melodic-bass', 'glitchcore', 'bass', 'glitch',
-    'moombahton', 'midtempo-bass', 'hardwave', 'drift-phonk', 'juke', 'footwork',
-    'grime', 'dub',
-
-    # --- PARENT: HARD DANCE / HARDCORE ---
-    'hardstyle', 'euphoric-hardstyle', 'rawstyle', 'gabber', 
-    'happy-hardcore', 'frenchcore', 'uptempo-hardcore', 'hard-dance',
-    'hard-bass', 'donk', 'bounce', 'scouse-house', 'nightcore',
-
-    # --- PARENT: DOWNTEMPO / EXPERIMENTAL ---
-    'downtempo', 'idm', 'trip-hop', 'chillstep', 'psydub', 
-    'vaporwave', 'synthwave', 'illbient', 'ethereal', 'electronica', 'chillout', 
-    'ambient', 'dream-pop', 'outrun', 'retrowave', 'chillsynth', 'musique-concrete',
-    'deconstructed-club',
-
-    # --- MISC / HYBRID ---
-    'hyperpop', 'eurodance', 'complextro', 'big-room', 'hardwell-style', 
-    'phonk', 'edm', 'electronic', 'synthpop', 'electropop',
-    'rave', 'rave-techno',
-]
 
 def get_electronic_genres(genres):
     if not genres: return []
-    return [genre for genre in genres if genre in electronic_genres]
+    manager = GenreManager.get_instance()
+    return [genre for genre in genres if manager.is_electronic(genre)]
 
 def get_artist_genres(artist_name):
-    """Returns the top 7 genres for an artist from Last.fm"""
+    """Returns all genres for an artist from Last.fm"""
     if artist_name in artist_genre_cache:
         return artist_genre_cache[artist_name]
     try:
         artist = network.get_artist(artist_name)
-        top_tags = artist.get_top_tags(limit=7)
+        # Get all top tags (no limit)
+        top_tags = artist.get_top_tags()
         # Lowercase and replace spaces with dashes for normalization
         genres = [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
         artist_genre_cache[artist_name] = genres
@@ -86,29 +39,24 @@ def get_artist_genres(artist_name):
 def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True, existing_data=None, supabase_client=None):
     """
     Fetches genres, categorizes them, and builds the artist metadata dict.
-    If filter_electronic is False, it includes the artist regardless of genre.
-    If existing_data or supabase_client is provided, it checks the DB first to skip Last.fm.
+    Prioritizes fallback_genres (CSV) and only falls back to Last.fm if data is sparse.
     """
-    # 1. Check existing_data if provided by bulk process
-    # 2. Otherwise, check Supabase directly if client provided
+    manager = GenreManager.get_instance()
+    
     if not existing_data and supabase_client:
         slug = artist_name.lower().replace(" ", "-")
         try:
-            # Fetch with new nested genre logic
             res = supabase_client.table("artists").select("*, artist_genres(genres(slug))").eq("name_slug", slug).execute()
             if res.data:
                 existing_data = res.data[0]
-                # Un-nest genres
                 ag_list = existing_data.get("artist_genres") or []
                 existing_data['genres'] = [ag['genres']['slug'] for ag in ag_list if ag.get('genres') and ag['genres'].get('slug')]
         except Exception:
-            pass # Fall back to Last.fm if DB fails
+            pass
 
     if existing_data:
-        # Use existing data from DB
         genres = existing_data.get('genres', [])
         
-        # We still need to respect the electronic filter even if they are in the DB
         if filter_electronic:
             electronic_matches = get_electronic_genres(genres)
             if not electronic_matches:
@@ -117,75 +65,72 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
         return {
             "name": existing_data.get('name', artist_name),
             "genres": genres,
-            "vibe_bucket": existing_data.get('vibe_bucket', []),
             "sonic_dna": existing_data.get('sonic_dna', {})
         }
 
-    # Otherwise, proceed with Last.fm API logic
-    lastfm_genres = get_artist_genres(artist_name)
+    # New Genre Priority Logic
+    csv_genres = fallback_genres if fallback_genres else []
+    genres_to_use = csv_genres
     
-    if not filter_electronic:
-        # Include all artists (like for festivals). Use lastfm if available, else fallback
-        genres_to_use = lastfm_genres if lastfm_genres else (fallback_genres or [])
-        return {
-            "name": artist_name,
-            "genres": genres_to_use,
-            "vibe_bucket": GenreClassifier.classify(genres_to_use),
-            "sonic_dna": VibeClassifier.get_artist_vibe(genres_to_use)
-        }
-    else:
-        # Strict electronic filtering for personal playlists
-        electronic_matches = get_electronic_genres(lastfm_genres)
-        if electronic_matches:
-            return {
-                "name": artist_name,
-                "genres": lastfm_genres,
-                "vibe_bucket": GenreClassifier.classify(lastfm_genres),
-                "sonic_dna": VibeClassifier.get_artist_vibe(lastfm_genres)
-            }
-        else:
-            csv_electronic_matches = get_electronic_genres(fallback_genres) if fallback_genres else []
-            if csv_electronic_matches:
-                return {
-                    "name": artist_name,
-                    "genres": fallback_genres,
-                    "vibe_bucket": GenreClassifier.classify(fallback_genres),
-                    "sonic_dna": VibeClassifier.get_artist_vibe(fallback_genres)
-                }
-            return None
+    # Determine if we should fallback to Last.fm
+    # Fallback if:
+    # 1. CSV has less than 2 genres (0 or 1)
+    # 2. CSV has exactly 1 electronic genre (and no other genres)
+    should_fallback = False
+    if len(csv_genres) < 2:
+        should_fallback = True
+    elif len(csv_genres) == 1 and manager.is_electronic(csv_genres[0]):
+        should_fallback = True
+        
+    if should_fallback:
+        lastfm_genres = get_artist_genres(artist_name)
+        if lastfm_genres:
+            genres_to_use = lastfm_genres
+        # If lastfm fails, we naturally keep using csv_genres as per logic
+        
+    if filter_electronic:
+        electronic_matches = get_electronic_genres(genres_to_use)
+        if not electronic_matches:
+            # If we were using lastfm and it failed to find electronic genres, 
+            # maybe the singular CSV genre was electronic and we should use that?
+            # "If the lastfm lookup fails we default to the singular electronic genre we found in the csv."
+            if genres_to_use != csv_genres:
+                secondary_electronic = get_electronic_genres(csv_genres)
+                if secondary_electronic:
+                    genres_to_use = csv_genres
+                else:
+                    return None
+            else:
+                return None
+            
+    return {
+        "name": artist_name,
+        "genres": genres_to_use,
+        "sonic_dna": VibeClassifier.get_artist_vibe(genres_to_use)
+    }
 
 def _categorize_worker(args):
-    """Worker function for unpacking args into categorize_artist."""
     artist_name, fallback_genres, filter_electronic, existing_data = args
     return categorize_artist(artist_name, fallback_genres, filter_electronic, existing_data)
 
 def bulk_categorize_artists(artist_requests, supabase_client=None, max_workers=10):
-    """
-    Multithreaded generation of categorized artist dicts.
-    artist_requests is a list of tuples: (artist_name, fallback_genres, filter_electronic)
-    If supabase_client is provided, it performs a batch lookup to avoid redundant API calls.
-    """
-    # 1. First, do a bulk lookup of all artists in the Supabase DB
     existing_map = {}
     if supabase_client:
         all_slugs = [name.lower().replace(" ", "-") for name, _, _ in artist_requests]
         print(f"🔍 Checking Supabase for {len(all_slugs)} existing artists...")
         
-        # Batch checks in chunks of 500
         for i in range(0, len(all_slugs), 500):
             batch_slugs = all_slugs[i:i+500]
             try:
                 res = supabase_client.table("artists").select("*, artist_genres(genres(slug))").in_("name_slug", batch_slugs).execute()
                 if res.data:
                     for row in res.data:
-                        # Un-nest genres
                         ag_list = row.get("artist_genres") or []
                         row['genres'] = [ag['genres']['slug'] for ag in ag_list if ag.get('genres') and ag['genres'].get('slug')]
                         existing_map[row["name_slug"]] = row
             except Exception as e:
                 print(f"⚠️ Warning: Bulk lookup failed: {e}")
 
-    # 2. Prepare requests for the worker (adding the existing data if found)
     worker_requests = []
     for name, fallback, filter_e in artist_requests:
         slug = name.lower().replace(" ", "-")
@@ -196,7 +141,6 @@ def bulk_categorize_artists(artist_requests, supabase_client=None, max_workers=1
     
     results = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Map the worker over the requests
         future_to_artist = {executor.submit(_categorize_worker, req): req[0] for req in worker_requests}
         for future in concurrent.futures.as_completed(future_to_artist):
             artist_name = future_to_artist[future]
@@ -210,14 +154,13 @@ def bulk_categorize_artists(artist_requests, supabase_client=None, max_workers=1
     return results
 
 def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
-    """Syncs a dictionary of analyzed artists to the Supabase database using bulk operations."""
     if not artist_dict:
         print("⚠️ No artists found to sync.")
         return
 
     print(f"🚀 Syncing {len(artist_dict)} artists to Supabase...")
+    manager = GenreManager.get_instance()
     
-    # 1. Prepare slug to artist mapping
     slugs_to_process = []
     artist_metadata_map = {}
     
@@ -227,13 +170,9 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
         artist_metadata_map[name_slug] = {
             "name": item['name'],
             "name_slug": name_slug,
-            # DEPRECATED: "genres": item.get('genres', []),
-            "vibe_bucket": item.get('vibe_bucket', []),
             "sonic_dna": item.get('sonic_dna', {})
         }
 
-    # 2. Fetch existing artists from Supabase to correctly route inserts vs updates
-    # We slice into groups of 100 just in case the query is too large, but typically it is fine.
     existing_slug_to_id = {}
     batch_size = 100
     for i in range(0, len(slugs_to_process), batch_size):
@@ -246,46 +185,19 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
         except Exception as e:
             print(f"❌ Error fetching bulk slugs: {e}")
 
-    # 3. Separate into Inserts and Updates
     inserts = []
     updates = []
     
     for slug, payload in artist_metadata_map.items():
         if slug in existing_slug_to_id:
-            # We must include the ID to perform an update or upsert
             payload["id"] = existing_slug_to_id[slug]
             updates.append(payload)
         else:
             inserts.append(payload)
             
-    # 4. Prepare Canonical Map for Funneler
-    canonical_map = {}
-    alias_dict = {
-        "dnb": "drum-and-bass", "d&b": "drum-and-bass", "drumnbass": "drum-and-bass",
-        "drum n bass": "drum-and-bass", "deep house": "deep-house", "tech house": "tech-house",
-        "progressive house": "progressive-house", "house music": "house", "techno music": "techno",
-    }
-    try:
-        genres_res = supabase_client.table("genres").select("id, slug, aliases").execute()
-        for grow in genres_res.data:
-            gid = grow["id"]
-            gslug = grow["slug"]
-            if gslug:
-                canonical_map[gslug] = gid
-            aliases = grow.get("aliases")
-            if aliases and isinstance(aliases, list):
-                for alias in aliases:
-                    alower = alias.lower().strip()
-                    if alower not in alias_dict:
-                        alias_dict[alower] = gslug
-    except Exception as e:
-        print(f"⚠️ Warning: Failed to fetch canonical map for funneler: {e}")
-
-    # 5. Perform Bulk DB Writes
     try:
         if inserts:
             res = supabase_client.table("artists").insert(inserts).execute()
-            # Catch the new IDs
             if res.data:
                 for row in res.data:
                     existing_slug_to_id[row["name_slug"]] = row["id"]
@@ -293,30 +205,18 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
         if updates:
             supabase_client.table("artists").upsert(updates).execute()
 
-        # 6. Synchronize artist_genres (for ALL processed artists)
         artist_genres_payloads = []
         for name_slug, item in artist_metadata_map.items():
             artist_id = existing_slug_to_id.get(name_slug)
             if not artist_id: continue
             
-            # Use original genres from artist_dict
-            raw_genres = item.get("genres", [])
-            if not raw_genres:
-                # If metadata_map didn't have them, try artist_dict directly
-                # (though they should be the same)
-                orig_item = next((v for v in artist_dict.values() if v['name'].lower().replace(" ", "-") == name_slug), {})
-                raw_genres = orig_item.get("genres", [])
+            orig_item = next((v for v in artist_dict.values() if v['name'].lower().replace(" ", "-") == name_slug), {})
+            raw_genres = orig_item.get("genres", [])
 
             seen_slugs = set()
             if raw_genres and isinstance(raw_genres, list):
                 for raw in raw_genres:
-                    cleaned = raw.lower().strip()
-                    if not cleaned: continue
-                    mapped_slug = alias_dict.get(cleaned, cleaned)
-                    mapped_slug = mapped_slug.replace(" ", "-")
-                    final_slug = alias_dict.get(mapped_slug, mapped_slug)
-                    genre_id = canonical_map.get(final_slug)
-                    
+                    genre_id = manager.get_canonical_id(raw)
                     if genre_id and genre_id not in seen_slugs:
                         seen_slugs.add(genre_id)
                         artist_genres_payloads.append({
@@ -327,7 +227,6 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
 
         if artist_genres_payloads:
             try:
-                # 1. Fetch existing mappings for these artists to avoid duplicates
                 processed_artist_ids = list(set(p['artist_id'] for p in artist_genres_payloads))
                 existing_mappings = []
                 for i in range(0, len(processed_artist_ids), 500):
@@ -337,8 +236,6 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
                         existing_mappings.extend(res.data)
                 
                 existing_set = set((m['artist_id'], m['genre_id']) for m in existing_mappings)
-                
-                # 2. Only insert the missing ones
                 to_insert = [p for p in artist_genres_payloads if (p['artist_id'], p['genre_id']) not in existing_set]
                 
                 if to_insert:
@@ -353,9 +250,7 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
     except Exception as e:
         print(f"❌ Error during bulk artist write: {e}")
 
-    # 5. Process Personal Library
     if user_id:
-        # Aggregate counts by artist_id to prevent duplicates in the bulk upsert
         library_data_agg = {}
         for item in artist_dict.values():
             if 'count' not in item: continue
@@ -381,8 +276,6 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
             except Exception as e:
                 print(f"❌ Error inserting user library batch: {e}")
                 
-        # Update user DNA after sync
         VibeClassifier.update_user_dna(user_id)
         
     print(f"✨ Finished Syncing {len(artist_dict)} artists to Supabase!")
-
