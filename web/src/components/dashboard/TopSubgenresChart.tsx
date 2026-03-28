@@ -20,9 +20,17 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
 
     const entries = Object.entries(subgenres)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 25); // Show up to 25
+        .slice(0, 25);
 
-    const total = entries.reduce((acc, current) => acc + current[1], 0);
+    if (entries.length === 0) {
+        return (
+            <div className="h-64 flex items-center justify-center text-zinc-500 text-sm italic">
+                No genres found in profile.
+            </div>
+        );
+    }
+
+    const globalTotal = entries.reduce((acc, current) => acc + current[1], 0);
 
     const getCoordinatesForPercent = (percent: number, radius: number = 1) => {
         const x = radius * Math.cos(2 * Math.PI * percent);
@@ -38,30 +46,59 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
         "#f472b6", "#a78bfa", "#60a5fa", "#34d399", "#fbbf24"
     ];
 
-    const { sectors } = entries.reduce<{ cumulative: number; sectors: Array<{ genre: string; value: number; start: number; end: number; percentage: number }> }>(
-        (acc, [genre, value]) => {
-            const start = acc.cumulative;
-            const percentage = value / total;
-            const end = start + percentage;
-            return {
-                cumulative: end,
-                sectors: [...acc.sectors, { genre, value, start, end, percentage }]
-            };
-        },
-        { cumulative: 0, sectors: [] }
-    );
+    // Split into 3 rings (Top 5, Next 8, Remaining up to 12)
+    const ring1Entries = entries.slice(0, 5);
+    const ring2Entries = entries.slice(5, 13);
+    const ring3Entries = entries.slice(13, 25);
+
+    const createRingSectors = (ringEntries: [string, number][], innerRadBase: number, outerRadBase: number, startIndexOffset: number) => {
+        if (ringEntries.length === 0) return [];
+        const ringTotal = ringEntries.reduce((acc, current) => acc + current[1], 0);
+        
+        const { sectors } = ringEntries.reduce<{ cumulative: number; sectors: any[] }>(
+            (acc, [genre, value], i) => {
+                const start = acc.cumulative;
+                // Local percentage for physical drawing slice size
+                const localPercentage = ringTotal > 0 ? value / ringTotal : 0; 
+                const end = start + localPercentage;
+                // Global percentage for text display
+                const globalPercentage = globalTotal > 0 ? value / globalTotal : 0;
+                
+                return {
+                    cumulative: end,
+                    sectors: [...acc.sectors, { 
+                        genre, 
+                        value, 
+                        start, 
+                        end, 
+                        localPercentage,
+                        globalPercentage,
+                        colorIndex: startIndexOffset + i,
+                        innerRadBase,
+                        outerRadBase
+                    }]
+                };
+            },
+            { cumulative: 0, sectors: [] }
+        );
+        return sectors;
+    };
+
+    const allSectors = [
+        ...createRingSectors(ring1Entries, 0.45, 0.60, 0),
+        ...createRingSectors(ring2Entries, 0.65, 0.80, ring1Entries.length),
+        ...createRingSectors(ring3Entries, 0.85, 1.00, ring1Entries.length + ring2Entries.length)
+    ];
 
     const activeSector = hoveredGenre 
-        ? sectors.find(s => s.genre === hoveredGenre) 
-        : sectors[0]; // Default to top genre if none hovered
+        ? allSectors.find(s => s.genre === hoveredGenre) 
+        : allSectors[0];
 
     return (
         <div className="flex flex-col items-center justify-center py-6 w-full">
             <div className="relative w-72 h-72 md:w-96 md:h-96 group mb-8">
-                {/* Glow effect */}
                 <div className="absolute inset-0 rounded-full bg-brand-purple/20 blur-3xl opacity-0 group-hover:opacity-60 transition-opacity duration-700" />
                 
-                {/* Center Content Data (Absolute positioned over SVG) */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
                     <AnimatePresence mode="wait">
                         {activeSector && (
@@ -73,34 +110,31 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
                                 transition={{ duration: 0.2 }}
                                 className="flex flex-col items-center justify-center p-4 text-center max-w-[60%]"
                             >
-                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-zinc-500 mb-2 truncate w-full" style={{ color: colors[sectors.indexOf(activeSector) % colors.length] }}>
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] mb-2 truncate w-full shadow-black drop-shadow-md" style={{ color: colors[activeSector.colorIndex % colors.length] }}>
                                     {activeSector.genre}
                                 </span>
-                                <span className="text-4xl sm:text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                                    {(activeSector.percentage * 100).toFixed(1)}%
+                                <span className="text-3xl sm:text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                                    {(activeSector.globalPercentage * 100).toFixed(1)}%
                                 </span>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
 
-                {/* Donut SVG */}
-                <svg viewBox="-1.2 -1.2 2.4 2.4" className="transform -rotate-90 w-full h-full relative z-10 filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                    {sectors.map((sector, index) => {
+                <svg viewBox="-1.1 -1.1 2.2 2.2" className="transform -rotate-90 w-full h-full relative z-10 filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                    {allSectors.map((sector) => {
                         const isHovered = hoveredGenre === sector.genre;
-                        const opacity = hoveredGenre ? (isHovered ? 1 : 0.3) : 1;
+                        const opacity = hoveredGenre ? (isHovered ? 1 : 0.25) : 0.9;
                         
-                        // Donut logic
-                        const innerRadius = isHovered ? 0.65 : 0.7; // Thicker ring on hover
-                        const outerRadius = isHovered ? 1.05 : 1; // Pops out on hover
+                        const innerRadius = isHovered ? sector.innerRadBase - 0.02 : sector.innerRadBase;
+                        const outerRadius = isHovered ? sector.outerRadBase + 0.02 : sector.outerRadBase;
 
                         const [startX, startY] = getCoordinatesForPercent(sector.start, outerRadius);
                         const [endX, endY] = getCoordinatesForPercent(sector.end, outerRadius);
                         const [innerStartX, innerStartY] = getCoordinatesForPercent(sector.start, innerRadius);
                         const [innerEndX, innerEndY] = getCoordinatesForPercent(sector.end, innerRadius);
                         
-                        // Fix exact 100% bug (if a user only has 1 genre)
-                        const isFullCircle = sector.percentage >= 0.9999;
+                        const isFullCircle = sector.localPercentage >= 0.9999;
                         let pathData = "";
 
                         if (isFullCircle) {
@@ -115,7 +149,7 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
                                 Z
                             `;
                         } else {
-                            const largeArcFlag = sector.percentage > 0.5 ? 1 : 0;
+                            const largeArcFlag = sector.localPercentage > 0.5 ? 1 : 0;
                             pathData = [
                                 `M ${startX} ${startY}`,
                                 `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${endX} ${endY}`,
@@ -129,12 +163,12 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
                             <motion.path 
                                 key={sector.genre} 
                                 d={pathData} 
-                                fill={colors[index % colors.length]} 
+                                fill={colors[sector.colorIndex % colors.length]} 
                                 stroke="#09090b" 
-                                strokeWidth="0.015" // Nice dark gap between slices
+                                strokeWidth="0.012"
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity, scale: 1 }}
-                                transition={{ delay: index * 0.02, duration: 0.4 }}
+                                transition={{ delay: sector.colorIndex * 0.015, duration: 0.4 }}
                                 onMouseEnter={() => setHoveredGenre(sector.genre)}
                                 onMouseLeave={() => setHoveredGenre(null)}
                                 className="cursor-pointer transition-all duration-300 pointer-events-auto"
@@ -146,3 +180,4 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
         </div>
     );
 };
+
