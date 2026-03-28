@@ -40,7 +40,7 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
     """
     Fetches genres, categorizes them, and builds the artist metadata dict.
     Prioritizes fallback_genres (CSV) and only falls back to Last.fm if data is sparse.
-    """
+    """ 
     manager = GenreManager.get_instance()
     
     if not existing_data and supabase_client:
