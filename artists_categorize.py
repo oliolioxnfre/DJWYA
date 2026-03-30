@@ -75,20 +75,36 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
     csv_genres = fallback_genres if fallback_genres else []
     genres_to_use = csv_genres
     
+    csv_electronic = get_electronic_genres(csv_genres)
+    generic_slugs = {"electronic", "edm", "rave"}
+    has_only_generic_electronic = False
+    
+    if csv_electronic:
+        has_only_generic_electronic = all(manager.get_canonical_slug(g) in generic_slugs for g in csv_electronic)
+    
     # Determine if we should fallback to Last.fm
     # Fallback if:
     # 1. CSV has less than 2 genres (0 or 1)
     # 2. CSV has exactly 1 electronic genre (and no other genres)
+    # 3. All electronic genres present in the CSV are generic ("electronic", "edm", "rave")
     should_fallback = False
     if len(csv_genres) < 2:
         should_fallback = True
-    elif len(csv_genres) == 1 and manager.is_electronic(csv_genres[0]):
+    elif len(csv_genres) == 1 and bool(csv_electronic):
+        should_fallback = True
+    elif has_only_generic_electronic:
         should_fallback = True
         
     if should_fallback:
         lastfm_genres = get_artist_genres(artist_name)
         if lastfm_genres:
-            genres_to_use = lastfm_genres
+            lastfm_electronic = get_electronic_genres(lastfm_genres)
+            lastfm_has_specific = any(manager.get_canonical_slug(g) not in generic_slugs for g in lastfm_electronic)
+            
+            # Use lastfm genres only if they provide a specific electronic genre,
+            # or if the CSV didn't even have generic electronic genre.
+            if lastfm_has_specific or not csv_electronic:
+                genres_to_use = lastfm_genres
         # If lastfm fails, we naturally keep using csv_genres as per logic
         
     if filter_electronic:
