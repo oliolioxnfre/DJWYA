@@ -54,7 +54,7 @@ export const TopArtistsBarChart: React.FC<TopArtistsBarChartProps> = ({ artists 
                                     style={{ left: `${percentage}%` }}
                                     className="absolute -top-4 -translate-x-1/2 px-2 py-1 bg-zinc-900 border border-brand-purple/30 rounded-lg text-[9px] font-black text-white whitespace-nowrap shadow-2xl z-[100] pointer-events-none"
                                 >
-                                    {artist.count} Plays
+                                    {artist.count} Songs
                                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-zinc-900 border-r border-b border-brand-purple/30 rotate-45" />
                                 </motion.div>
                             </div>

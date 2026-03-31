@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Find festivals based on your Sonic DNA",
 };
 
+import VibeProvider from "@/components/dashboard/VibeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +29,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased text-white bg-black`}
       >
-        {children}
+        <VibeProvider>
+          {children}
+        </VibeProvider>
       </body>
     </html>
   );

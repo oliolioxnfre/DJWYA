@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 export default function Header() {
     const pathname = usePathname();
-    const isDashboard = pathname === "/dashboard";
+    const isDashboard = pathname === "/dashboard" || pathname === "/dashboard/settings";
 
     return (
         <div className="fixed top-0 left-0 right-0 z-[2000] p-6 pointer-events-none">
@@ -27,21 +27,27 @@ export default function Header() {
                     <nav className="flex items-center gap-6 pt-1">
                         <Link 
                             href="/dashboard" 
-                            className="text-[10px] font-bold tracking-[.25em] uppercase text-white transition-all hover:opacity-70"
+                            className={`text-[10px] font-bold tracking-[.25em] uppercase transition-all hover:opacity-70 ${(pathname as string) === "/dashboard" ? "text-white" : "text-zinc-500"}`}
                         >
                             Dashboard
                         </Link>
                         <Link 
                             href="/dashboard/festivals" 
-                            className="text-[10px] font-bold tracking-[.25em] uppercase text-zinc-500 transition-all hover:text-white"
+                            className={`text-[10px] font-bold tracking-[.25em] uppercase transition-all hover:white ${(pathname as string) === "/dashboard/festivals" ? "text-white" : "text-zinc-500"}`}
                         >
                             Festival Map
                         </Link>
                         <Link 
                             href="/graph" 
-                            className="text-[10px] font-bold tracking-[.25em] uppercase text-zinc-500 transition-all hover:text-white"
+                            className={`text-[10px] font-bold tracking-[.25em] uppercase transition-all hover:white ${(pathname as string) === "/graph" ? "text-white" : "text-zinc-500"}`}
                         >
                             Genre Network
+                        </Link>
+                        <Link 
+                            href="/dashboard/settings" 
+                            className={`text-[10px] font-bold tracking-[.25em] uppercase transition-all hover:white ${(pathname as string) === "/dashboard/settings" ? "text-white" : "text-zinc-500"}`}
+                        >
+                            Settings
                         </Link>
                     </nav>
                 )}

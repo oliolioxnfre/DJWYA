@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 export default function DashboardPage() {
     const [session, setSession] = useState<Session | null>(null);
     const [username, setUsername] = useState<string | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [dna, setDna] = useState<any>(null);
     const [subgenres, setSubgenres] = useState<any>(null);
     const [topArtists, setTopArtists] = useState<any[]>([]);
@@ -143,7 +144,7 @@ export default function DashboardPage() {
             // 1. Fetch User Profile (Username, DNA, Subgenres)
             const { data: profile } = await supabase
                 .from("users")
-                .select("username, sonic_dna, subgenres")
+                .select("username, avatar_url, sonic_dna, subgenres")
                 .eq("id", userId)
                 .single();
 
@@ -151,6 +152,7 @@ export default function DashboardPage() {
                 if (profile.username) setUsername(profile.username);
                 else router.push("/onboarding");
                 
+                setAvatarUrl(profile.avatar_url);
                 setDna(profile.sonic_dna);
                 setSubgenres(profile.subgenres);
             }
@@ -207,12 +209,22 @@ export default function DashboardPage() {
                 <motion.header 
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row md:items-end gap-4"
+                    className="flex flex-col md:flex-row md:items-center gap-12"
                 >
-                    <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-brand-purple drop-shadow-[0_0_50px_rgba(139,92,246,0.3)] uppercase">
-                        {username || "USERNAME"}
-                    </h1>
-                    <div className="pb-4 md:pb-8 flex items-center gap-3">
+                    <div className="flex items-center gap-10">
+                        {(avatarUrl || session?.user?.user_metadata?.avatar_url) && (
+                            <img 
+                                src={avatarUrl || session?.user?.user_metadata?.avatar_url}
+                                alt="PFP"
+                                className="w-24 h-24 md:w-40 md:h-40 rounded-[2.5rem] object-cover border-2 border-brand-purple/20 shadow-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.3)]"
+                            />
+                        )}
+                        <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-brand-purple drop-shadow-[0_0_50px_rgba(139,92,246,0.3)] uppercase leading-none">
+                            {username || "USERNAME"}
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-3 md:pb-2">
                         <span className="text-2xl md:text-3xl font-bold text-zinc-400">
                             {songCount.toLocaleString()}
                         </span>
