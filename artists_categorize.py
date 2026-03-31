@@ -23,26 +23,56 @@ def get_electronic_genres(genres):
     manager = GenreManager.get_instance()
     return [genre for genre in genres if manager.is_electronic(genre)]
 
+import time
+
 def get_artist_genres(artist_name):
-    """Returns all genres for an artist from Last.fm"""
+    """Returns all genres for an artist from Last.fm, with heavy persistence for accuracy."""
     if artist_name in artist_genre_cache:
         return artist_genre_cache[artist_name]
-    try:
-        artist = network.get_artist(artist_name)
-        # Get a generous amount of tags (limit 50 to avoid extreme cases)
-        top_tags = artist.get_top_tags(limit=50)
-        # Lowercase and replace spaces with dashes for normalization
-        genres = [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
-        artist_genre_cache[artist_name] = genres
-        return genres
-    except Exception as e:
-        artist_genre_cache[artist_name] = [] # Cache empty to prevent retrying failures
-        return []
+        
+    # Increasing retries to be extremely persistent for high-quality data
+    retries = 10 
+    for attempt in range(retries):
+        try:
+            artist = network.get_artist(artist_name)
+            # Get a generous amount of tags (limit 50 to avoid extreme cases)
+            top_tags = artist.get_top_tags(limit=50)
+            # Lowercase and replace spaces with dashes for normalization
+            genres = [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
+            
+            # Successful fetch: cache and return
+            artist_genre_cache[artist_name] = genres
+            return genres
+            
+        except pylast.WSError as ws:
+            # Code 6 is "The artist you supplied could not be found"
+            # We only cache empty if it's a definitive "Not Found" error
+            err_str = str(ws).lower()
+            if "not found" in err_str or "no such artist" in err_str:
+                print(f"ℹ️ Last.fm: Artist '{artist_name}' not found.")
+                artist_genre_cache[artist_name] = []
+                return []
+            
+            # Rate limits or internal Last.fm errors: Wait and retry
+            wait_time = (attempt + 1) * 2
+            print(f"⚠️ Last.fm API Error ({ws}). Waiting {wait_time}s to retry {artist_name}...")
+            time.sleep(wait_time)
+            
+        except Exception as e:
+            # Network timeouts, SSL issues, etc.
+            wait_time = (attempt + 1) * 2
+            print(f"⚠️ Network issue for {artist_name} (Attempt {attempt+1}/{retries}): {e}. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
+
+    # If we exhausted 10 retries, we return empty but DONT cache it
+    # This allows a future run to potentially fix it without a restart
+    print(f"❌ Exhausted all {retries} retries for {artist_name}. Returning empty for now.")
+    return []
 
 def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True, existing_data=None, supabase_client=None):
     """
     Fetches genres, categorizes them, and builds the artist metadata dict.
-    Prioritizes fallback_genres (CSV) and only falls back to Last.fm if data is sparse.
+    Calculates unified vote scoring across both CSV and Last.fm inputs.
     """ 
     manager = GenreManager.get_instance()
     
@@ -63,7 +93,7 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
         if filter_electronic:
             electronic_matches = get_electronic_genres(genres)
             if not electronic_matches:
-                return None
+                genres = []
                 
         return {
             "name": existing_data.get('name', artist_name),
@@ -71,61 +101,101 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
             "sonic_dna": existing_data.get('sonic_dna', {})
         }
 
-    # New Genre Priority Logic
-    csv_genres = fallback_genres if fallback_genres else []
-    genres_to_use = csv_genres
+    # New Dual-Source Vote System Logic
+    csv_genres = []
+    if fallback_genres:
+        for item in fallback_genres:
+            csv_genres.extend([g.strip() for g in item.split(",") if g.strip()])
+            
+    # 1. Fetch both Last.fm and CSV data unconditionally
+    lastfm_genres = get_artist_genres(artist_name)
     
+    # 2. Get electronic canonical subsets
     csv_electronic = get_electronic_genres(csv_genres)
+    lastfm_electronic = get_electronic_genres(lastfm_genres)
+    
     generic_slugs = {"electronic", "edm", "rave"}
-    has_only_generic_electronic = False
+    genre_votes_map = {}
     
-    if csv_electronic:
-        has_only_generic_electronic = all(manager.get_canonical_slug(g) in generic_slugs for g in csv_electronic)
-    
-    # Determine if we should fallback to Last.fm
-    # Fallback if:
-    # 1. CSV has less than 2 genres (0 or 1)
-    # 2. CSV has exactly 1 electronic genre (and no other genres)
-    # 3. All electronic genres present in the CSV are generic ("electronic", "edm", "rave")
-    should_fallback = False
-    if len(csv_genres) < 2:
-        should_fallback = True
-    elif len(csv_genres) == 1 and bool(csv_electronic):
-        should_fallback = True
-    elif has_only_generic_electronic:
-        should_fallback = True
-        
-    if should_fallback:
-        lastfm_genres = get_artist_genres(artist_name)
-        if lastfm_genres:
-            lastfm_electronic = get_electronic_genres(lastfm_genres)
-            lastfm_has_specific = any(manager.get_canonical_slug(g) not in generic_slugs for g in lastfm_electronic)
-            
-            # Use lastfm genres only if they provide a specific electronic genre,
-            # or if the CSV didn't even have generic electronic genre.
-            if lastfm_has_specific or not csv_electronic:
-                genres_to_use = lastfm_genres
-        # If lastfm fails, we naturally keep using csv_genres as per logic
-        
-    if filter_electronic:
-        electronic_matches = get_electronic_genres(genres_to_use)
-        if not electronic_matches:
-            # If we were using lastfm and it failed to find electronic genres, 
-            # maybe the singular CSV genre was electronic and we should use that?
-            # "If the lastfm lookup fails we default to the singular electronic genre we found in the csv."
-            if genres_to_use != csv_genres:
-                secondary_electronic = get_electronic_genres(csv_genres)
-                if secondary_electronic:
-                    genres_to_use = csv_genres
-                else:
-                    return None
+    # helper to process a list of genres into the vote map
+    def process_genres(genre_list, source):
+        for raw in genre_list:
+            slug = manager.get_canonical_slug(raw)
+            if not manager.is_electronic(slug):
+                continue
+            if slug in genre_votes_map:
+                # If it's already in from another source, it's an intersection!
+                if genre_votes_map[slug]["source"] != source:
+                    genre_votes_map[slug]["votes"] = 20
             else:
-                return None
-            
+                genre_votes_map[slug] = {"votes": 5, "source": source}
+                
+    process_genres(csv_genres, source="csv")
+    process_genres(lastfm_genres, source="lastfm")
+    
+    # --- HARD LIMITERS ---
+    # ROOT genres that are definitively non-electronic.
+    # We use exact slug matching to avoid catching crossover genres like 
+    # "Indie Dance" or "Synth Funk".
+    RAW_BLACKLIST = [
+        "rock", "rap", "metal", "heavy-metal", "ska", "acoustic", "hardcore-punk",
+        "country", "shoegaze", "pop-punk", "alternative-rock", "death-metal", "black-metal",
+        "classical", "folk-rock", "punk", "punk-rock", "ska", "blues"
+    ]
+    
+    HARD_BLACKLIST = {manager.get_canonical_slug(b) for b in RAW_BLACKLIST}
+    
+    all_raw_tags = csv_genres + lastfm_genres
+
+    all_slugs = {manager.get_canonical_slug(tag) for tag in all_raw_tags}
+    
+    # 1. Absolute Blacklist: 
+    # If any of the hard non-electronic genres exist exactly, wipe out their electronic features
+    if any(slug in HARD_BLACKLIST for slug in all_slugs):
+        genre_votes_map.clear()
+        
+    # 2. Generic Isolation Rule:
+    # If the *only* electronic tags they possess are generic (electronic, edm, rave)...
+    has_specific_electronic = any(slug not in generic_slugs for slug in genre_votes_map.keys())
+    if not has_specific_electronic and bool(genre_votes_map):
+        # ...they MUST not have any other catalog mapped sub-genres.
+        all_slugs_loop = {manager.get_canonical_slug(tag) for tag in all_raw_tags}
+        # Simple Generic Isolation: If they have less than 20% electronic genres,
+        # and only generic electronic genres, wipe out their electronic features.
+        if len(genre_votes_map) < len(all_raw_tags) * 0.2:
+            genre_votes_map.clear()
+    
+    # --- END HARD LIMITERS ---
+    
+    # 3. Handle generics
+    # If there are ANY specific electronic tags across both sources, purge generics entirely.
+    has_specific = any(slug not in generic_slugs for slug in genre_votes_map.keys())
+    if has_specific:
+        # scrub generics
+        for slug in generic_slugs:
+            if slug in genre_votes_map:
+                del genre_votes_map[slug]
+                
+    # 4. Strict Electronic Filtering logic
+    # If filter_electronic=True, and we have NO valid electronic tags (either naturally, 
+    # or because they hit the blacklist and got cleared), we explicitly ensure their 
+    # return dict has absolutely ZERO electronic footprint, but we ALLOW them to return 
+    # so they get inserted into the database as a blank-slate!
+    if filter_electronic and not genre_votes_map:
+        genre_votes_map.clear()
+    
+    # In order to maintain compatibility with existing payload shapes,
+    # "genres" will still return a flat list ordered by votes desc,
+    # and we add "genre_votes" to pass explicit counts.
+    sorted_genres = sorted(genre_votes_map.items(), key=lambda x: x[1]["votes"], reverse=True)
+    flat_genres_to_use = [item[0] for item in sorted_genres]
+    vote_counts_only = {item[0]: item[1]["votes"] for item in sorted_genres}
+    
     return {
         "name": artist_name,
-        "genres": genres_to_use,
-        "sonic_dna": VibeClassifier.get_artist_vibe(genres_to_use)
+        "genres": flat_genres_to_use,
+        "genre_votes": vote_counts_only,
+        "sonic_dna": VibeClassifier.get_artist_vibe_from_votes(vote_counts_only)
     }
 
 def _categorize_worker(args):
@@ -230,10 +300,25 @@ def sync_artists_to_supabase(artist_dict, supabase_client, user_id=None):
             if not artist_id: continue
             
             orig_item = next((v for v in artist_dict.values() if v['name'].lower().replace(" ", "-") == name_slug), {})
+            # Read the vote map from the origin item. If empty or legacy, just fall back to standard genre list.
+            genre_votes_map = orig_item.get("genre_votes", {})
             raw_genres = orig_item.get("genres", [])
 
             seen_slugs = set()
-            if raw_genres and isinstance(raw_genres, list):
+            
+            # If we dynamically computed genre_votes (the new way)
+            if genre_votes_map and isinstance(genre_votes_map, dict):
+                for raw, votes in genre_votes_map.items():
+                    genre_id = manager.get_canonical_id(raw)
+                    if genre_id and genre_id not in seen_slugs:
+                        seen_slugs.add(genre_id)
+                        artist_genres_payloads.append({
+                            "artist_id": artist_id,
+                            "genre_id": genre_id,
+                            "vote_count": votes
+                        })
+            # Legacy fallback: if we only have the flat list
+            elif raw_genres and isinstance(raw_genres, list):
                 for raw in raw_genres:
                     genre_id = manager.get_canonical_id(raw)
                     if genre_id and genre_id not in seen_slugs:

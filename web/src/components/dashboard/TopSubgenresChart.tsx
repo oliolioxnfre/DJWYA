@@ -19,6 +19,7 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
     }
 
     const entries = Object.entries(subgenres)
+        .filter(([genre]) => genre !== "electronic" && genre !== "rave")
         .sort((a, b) => b[1] - a[1])
         .slice(0, 25);
 

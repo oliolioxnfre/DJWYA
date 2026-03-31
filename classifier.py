@@ -79,6 +79,44 @@ class VibeClassifier:
     CATEGORIES = ['intensity', 'euphoria', 'space', 'pulse', 'chaos', 'swing', 'bass']
 
     @classmethod
+    def get_artist_vibe_from_votes(cls, genre_votes: dict):
+        """
+        Takes a dict of {genre: votes} for an artist, maps them through the database, 
+        and returns the averaged Hexagon coordinates, weighted directly by their votes.
+        """
+        manager = GenreManager.get_instance()
+        vectors = []
+        weights = []
+        
+        # In case there are duplicates mapping to the same canonical slug, aggregate their votes
+        aggregated_votes = {}
+        for raw, votes in genre_votes.items():
+            slug = manager.get_canonical_slug(raw)
+            if slug in manager.slug_to_dna:
+                aggregated_votes[slug] = aggregated_votes.get(slug, 0) + votes
+                
+        for slug, votes in aggregated_votes.items():
+            vectors.append(manager.slug_to_dna[slug])
+            weights.append(votes)
+                
+        if not vectors:
+            return None
+            
+        total_weight = sum(weights)
+        if total_weight == 0:
+            return None
+            
+        avg_vibe = {}
+        for category in cls.CATEGORIES:
+            weighted_sum = sum(
+                (v.get(category, 0.0) if isinstance(v, dict) else 0.0) * w 
+                for v, w in zip(vectors, weights)
+            )
+            avg_vibe[category] = weighted_sum / total_weight
+            
+        return {k: round(v, 2) for k, v in avg_vibe.items()}
+
+    @classmethod
     def get_artist_vibe(cls, genres):
         """
         Takes a list of Last.fm genres for an artist, maps them through the database, 
@@ -125,7 +163,7 @@ class VibeClassifier:
         supabase: Client = create_client(url, key)
         print(f"Fetching sonic DNA and play counts for {user_id}...")
         
-        response = supabase.table("user_lib").select("count, artists(name, sonic_dna, artist_genres(genres(slug)))").eq("user_id", user_id).execute()
+        response = supabase.table("user_lib").select("count, artists(name, sonic_dna, artist_genres(vote_count, genres(slug)))").eq("user_id", user_id).execute()
         artist_data_list = []
         full_artist_info_list = [] # For subgenre extraction
         
@@ -138,17 +176,18 @@ class VibeClassifier:
             dna = artist_info.get("sonic_dna")
             name = artist_info.get("name", "Unknown Artist")
             
-            # Extract genres from junction table format
-            genres = []
+            # Extract genres and votes from junction table format
+            genres_with_votes = {}
             ag_list = artist_info.get("artist_genres") or []
             for ag in ag_list:
                 g = ag.get("genres")
+                vote_count = ag.get("vote_count", 5)
                 if g and g.get("slug"):
-                    genres.append(g["slug"])
+                    genres_with_votes[g["slug"]] = vote_count
             
             full_artist_info_list.append({
                 'name': name,
-                'genres': genres,
+                'genres_votes': genres_with_votes,
                 'count': play_count
             })
             
@@ -184,7 +223,7 @@ class VibeClassifier:
         supabase: Client = create_client(url, key)
         
         print("🔄 Fetching all artists from database...")
-        response = supabase.table("artists").select("id, name, name_slug, artist_genres(genres(slug))").execute()
+        response = supabase.table("artists").select("id, name, name_slug, artist_genres(vote_count, genres(slug))").execute()
         artists = response.data
         
         if not artists:
@@ -196,16 +235,17 @@ class VibeClassifier:
         
         for artist in artists:
             ag_list = artist.get("artist_genres") or []
-            genres = []
+            genre_votes = {}
             for ag in ag_list:
                 g = ag.get("genres")
+                vote_count = ag.get("vote_count", 5)
                 if g and g.get("slug"):
-                    genres.append(g["slug"])
+                    genre_votes[g["slug"]] = vote_count
                     
-            if not genres:
+            if not genre_votes:
                 continue
                 
-            new_dna = cls.get_artist_vibe(genres)
+            new_dna = cls.get_artist_vibe_from_votes(genre_votes)
             if new_dna:
                 updates.append({
                     "id": artist['id'], 
@@ -257,24 +297,33 @@ class VibeClassifier:
         subgenre_weights = {}
         
         for artist in artist_info_list:
-            genres = artist.get('genres', [])
+            genres_votes = artist.get('genres_votes', {})
             count = artist.get('count', 1)
             
-            mapped_subgenres = []
-            for g in genres:
-                slug = manager.get_canonical_slug(g)
+            mapped_subgenres = {}
+            for raw, votes in genres_votes.items():
+                slug = manager.get_canonical_slug(raw)
+                
+                # Hard filter overly generic genres (electronic, rave)
+                if slug in ["electronic", "rave"]:
+                    continue
+
                 # Include all electronic subgenres in the distribution, 
                 # even if we don't have DNA coordinates for them yet.
-                if manager.is_electronic(slug) and slug not in mapped_subgenres:
-                    mapped_subgenres.append(slug)
+                if manager.is_electronic(slug):
+                    if slug not in mapped_subgenres:
+                        mapped_subgenres[slug] = votes
+                    else:
+                        mapped_subgenres[slug] += votes
             
             if not mapped_subgenres:
                 continue
                 
-            weights = [1.0 / (i + 1) for i in range(len(mapped_subgenres))]
-            total_artist_weight = sum(weights)
+            total_artist_weight = sum(mapped_subgenres.values())
+            if total_artist_weight == 0:
+                continue
             
-            for sub, w in zip(mapped_subgenres, weights):
+            for sub, w in mapped_subgenres.items():
                 contribution = (w / total_artist_weight) * count
                 subgenre_weights[sub] = subgenre_weights.get(sub, 0.0) + contribution
         
