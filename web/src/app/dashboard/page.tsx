@@ -209,22 +209,13 @@ export default function DashboardPage() {
                 <motion.header 
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row md:items-center gap-12"
+                    className="flex flex-col md:flex-row md:items-end gap-12"
                 >
-                    <div className="flex items-center gap-10">
-                        {(avatarUrl || session?.user?.user_metadata?.avatar_url) && (
-                            <img 
-                                src={avatarUrl || session?.user?.user_metadata?.avatar_url}
-                                alt="PFP"
-                                className="w-24 h-24 md:w-40 md:h-40 rounded-[2.5rem] object-cover border-2 border-brand-purple/20 shadow-2xl drop-shadow-[0_0_30px_rgba(139,92,246,0.3)]"
-                            />
-                        )}
-                        <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-brand-purple drop-shadow-[0_0_50px_rgba(139,92,246,0.3)] uppercase leading-none">
-                            {username || "USERNAME"}
-                        </h1>
-                    </div>
+                    <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-brand-purple drop-shadow-[0_0_50px_rgba(139,92,246,0.3)] uppercase leading-none">
+                        {username || "USERNAME"}
+                    </h1>
 
-                    <div className="flex items-center gap-3 md:pb-2">
+                    <div className="flex items-center gap-3 pb-4 md:pb-8">
                         <span className="text-2xl md:text-3xl font-bold text-zinc-400">
                             {songCount.toLocaleString()}
                         </span>

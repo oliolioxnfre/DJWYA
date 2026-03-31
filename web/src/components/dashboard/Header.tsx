@@ -3,10 +3,34 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Header() {
     const pathname = usePathname();
-    const isDashboard = pathname === "/dashboard" || pathname === "/dashboard/settings";
+    const isDashboard = ["/dashboard", "/dashboard/settings", "/dashboard/festivals", "/graph"].includes(pathname);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isDashboard) return;
+
+        const fetchPfp = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            const { data } = await supabase
+                .from("users")
+                .select("avatar_url")
+                .eq("id", session.user.id)
+                .single();
+
+            if (data) {
+                setAvatarUrl(data.avatar_url);
+            }
+        };
+
+        fetchPfp();
+    }, [isDashboard]);
 
     return (
         <div className="fixed top-0 left-0 right-0 z-[2000] p-6 pointer-events-none">
@@ -52,6 +76,19 @@ export default function Header() {
                     </nav>
                 )}
             </div>
+
+            {/* Profile Picture - Top Right */}
+            {isDashboard && avatarUrl && (
+                <div className="absolute top-8 right-10 pointer-events-auto">
+                    <Link href="/dashboard/settings">
+                        <img 
+                            src={avatarUrl}
+                            alt="Profile"
+                            className="w-10 h-10 rounded-full object-cover border border-white/20 shadow-lg hover:scale-110 active:scale-95 transition-transform"
+                        />
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }
