@@ -36,10 +36,10 @@ const createPulseIcon = (matchScore: number) => {
 
 
 // Component to handle map flying
-function MapUpdater({ center, zoom, offsetY = 0 }: { center: [number, number]; zoom: number; offsetY?: number }) {
+function MapUpdater({ center, zoom, offsetY = 0 }: { center: [number, number] | null; zoom: number | null; offsetY?: number }) {
     const map = useMap();
     useEffect(() => {
-        if (!center || center.length !== 2) return;
+        if (!center || center.length !== 2 || zoom === null) return;
         
         let targetLatLng = L.latLng(center[0], center[1]);
         
@@ -71,10 +71,11 @@ export interface MapBoxProps {
 }
 
 export default function MapBox({ festivals, selectedIndex, onSelectFestival }: MapBoxProps) {
+    const [hasCenteredInitial, setHasCenteredInitial] = React.useState(false);
     const defaultCenter: [number, number] = [39.8283, -98.5795]; // Center of US
 
-    let activeCenter: [number, number] = defaultCenter;
-    let activeZoom = 4;
+    let activeCenter: [number, number] | null = null;
+    let activeZoom: number | null = null;
 
     if (festivals.length > 0) {
         if (selectedIndex >= 0 && selectedIndex < festivals.length) {
@@ -83,8 +84,8 @@ export default function MapBox({ festivals, selectedIndex, onSelectFestival }: M
                 activeCenter = [fest.lat, fest.lng];
                 activeZoom = 7; // Closer zoom for festival
             }
-        } else if (selectedIndex === -1) {
-            // Find bounding box for all festivals
+        } else if (selectedIndex === -1 && !hasCenteredInitial) {
+            // Find bounding box for all festivals ONLY the first time
             const lats = festivals.map(f => f.lat).filter((l): l is number => l !== null);
             const lngs = festivals.map(f => f.lng).filter((l): l is number => l !== null);
 
@@ -99,6 +100,7 @@ export default function MapBox({ festivals, selectedIndex, onSelectFestival }: M
 
                 activeCenter = [centerLat, centerLng];
                 activeZoom = 4;
+                setHasCenteredInitial(true);
             }
         }
     }
