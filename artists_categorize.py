@@ -30,43 +30,49 @@ def get_artist_genres(artist_name):
     if artist_name in artist_genre_cache:
         return artist_genre_cache[artist_name]
         
-    # Increasing retries to be extremely persistent for high-quality data
-    retries = 10 
-    for attempt in range(retries):
-        try:
-            artist = network.get_artist(artist_name)
-            # Get a generous amount of tags (limit 50 to avoid extreme cases)
-            top_tags = artist.get_top_tags(limit=50)
-            # Lowercase and replace spaces with dashes for normalization
-            genres = [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
-            
-            # Successful fetch: cache and return
-            artist_genre_cache[artist_name] = genres
-            return genres
-            
-        except pylast.WSError as ws:
-            # Code 6 is "The artist you supplied could not be found"
-            # We only cache empty if it's a definitive "Not Found" error
-            err_str = str(ws).lower()
-            if "not found" in err_str or "no such artist" in err_str:
-                print(f"ℹ️ Last.fm: Artist '{artist_name}' not found.")
-                artist_genre_cache[artist_name] = []
-                return []
-            
-            # Rate limits or internal Last.fm errors: Wait and retry
-            wait_time = (attempt + 1) * 2
-            print(f"⚠️ Last.fm API Error ({ws}). Waiting {wait_time}s to retry {artist_name}...")
-            time.sleep(wait_time)
-            
-        except Exception as e:
-            # Network timeouts, SSL issues, etc.
-            wait_time = (attempt + 1) * 2
-            print(f"⚠️ Network issue for {artist_name} (Attempt {attempt+1}/{retries}): {e}. Retrying in {wait_time}s...")
-            time.sleep(wait_time)
+    def fetch_genres(name_to_fetch):
+        artist = network.get_artist(name_to_fetch)
+        top_tags = artist.get_top_tags(limit=50)
+        return [tag.item.get_name().lower().replace(" ", "-") for tag in top_tags]
 
-    # If we exhausted 10 retries, we return empty but DONT cache it
-    # This allows a future run to potentially fix it without a restart
-    print(f"❌ Exhausted all {retries} retries for {artist_name}. Returning empty for now.")
+    names_to_try = [artist_name]
+    # Try an ascii-normalized name if different
+    normalized = artist_name.encode('ascii', 'ignore').decode('utf-8').strip()
+    # Also sometimes EDM names have extra text in parentheses. We can keep it simple for now as requested.
+    if normalized and normalized != artist_name:
+        names_to_try.append(normalized)
+
+    retries = 5 # Reduced from 10 to not hang the scraper on actual connection errors
+    for name_variant in names_to_try:
+        for attempt in range(retries):
+            try:
+                genres = fetch_genres(name_variant)
+                # Successful fetch
+                artist_genre_cache[artist_name] = genres
+                return genres
+                
+            except pylast.WSError as ws:
+                err_str = str(ws).lower()
+                # "could not be found" wasn't caught by "not found" in a strict contiguous check
+                if "not found" in err_str or "no such artist" in err_str or "could not be found" in err_str:
+                    print(f"ℹ️ Last.fm: Artist '{name_variant}' not found.")
+                    break # Break retry loop, move to next normalization variant if exists
+                
+                # Rate limits or internal Last.fm errors: Wait and retry
+                wait_time = (attempt + 1) * 2
+                print(f"⚠️ Last.fm API Error ({ws}). Waiting {wait_time}s to retry '{name_variant}'...")
+                time.sleep(wait_time)
+                
+            except Exception as e:
+                # Network timeouts, SSL issues, etc.
+                wait_time = (attempt + 1) * 2
+                print(f"⚠️ Network issue for '{name_variant}' (Attempt {attempt+1}/{retries}): {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+
+    # If we fall through (all variants failed or were not found)
+    print(f"❌ '{artist_name}' could not be resolved on Last.fm. Storing empty genres to pass to database anyways.")
+    artist_genre_cache[artist_name] = []
+    # Cache it as empty so we don't spam Last.fm on future passes
     return []
 
 def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True, existing_data=None, supabase_client=None):

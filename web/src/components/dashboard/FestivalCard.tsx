@@ -16,7 +16,7 @@ export interface FestivalData {
     lat: number | null;
     lng: number | null;
     location?: string;
-    date?: string;
+    start_date?: string;
     size?: number | string;
     type?: string;
     fest_subgenres?: Record<string, number>;
@@ -153,10 +153,10 @@ export default function FestivalCard({
                                             <MapPin className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
                                             {festival.location || "Location Unknown"}
                                         </div>
-                                        {festival.date && (
+                                        {festival.start_date && (
                                             <div className="flex items-center text-pink-400">
                                                 <span className="text-gray-500 mr-2 opacity-50">|</span>
-                                                {festival.date}
+                                                {festival.start_date}
                                             </div>
                                         )}
                                     </div>

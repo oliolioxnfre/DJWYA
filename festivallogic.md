@@ -13,13 +13,23 @@ Aggregating Festivals for the database
                     name(text): name
                     start_date(date): date
                     end_date(date): date
-                    lineup(jsonb): artistList
                     lat(float8): venue['latitude'] 
                     lng(float8): venue['longitude']
                     location(text): "venue['city'], venue['state'], venue['country']"
                     state(text): venue['state']
                     city(text): venue['city']
                     country(text): venue['country']
+                IF the festival has a non null lineup, we must process all of the artists in the lineup
+                Once all the artists in the lineup have been processed, we add their uuids to the artist_id column of the event_artists table and the uuid of the festival to the event_id column of the event_artists table.
+                After a lineup has been processed, we recalculate the festival's genre_id column by taking the mode of all the genres of the artists in the lineup the same way as in festival_aggregator.py. Then we also recalcualte the festival's sonic_dna the same way as in festival_aggregator.py. After all this has been done we can move onto the next festival.
+
+Unprocessible names:
+    If a name is not found in Last.fm then dont add it.
+    If a name has the format: "NAME1 (NAME2 & NAME3)" then we must only process NAME2 & NAME3.
+        For example the name "SUBJOHNICS (Subtronics & John Summit)" could not be resolved on Last.fm, but "Subtronics & John Summit" could be.
+    
+
+
                     
 CURRENT PLAN:
     MUST REFACTOR FESTIVALS TABLE ID(int8) to UUID

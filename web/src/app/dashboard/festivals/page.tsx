@@ -57,7 +57,7 @@ export default function FestivalsPage() {
                     lat: f.lat ? parseFloat(f.lat) : null,
                     lng: f.lng ? parseFloat(f.lng) : null,
                     location: f.location,
-                    date: f.date,
+                    start_date: f.start_date,
                     size: f.size,
                     type: f.type,
                     fest_subgenres: f.fest_subgenres

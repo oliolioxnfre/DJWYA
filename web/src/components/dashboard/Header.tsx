@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function Header() {
     const pathname = usePathname();
-    const isDashboard = ["/dashboard", "/dashboard/settings", "/dashboard/festivals", "/graph"].includes(pathname);
+    const isDashboard = ["/dashboard", "/dashboard/settings"].includes(pathname);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
     useEffect(() => {
