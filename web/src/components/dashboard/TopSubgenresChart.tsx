@@ -9,6 +9,7 @@ interface TopSubgenresChartProps {
 
 export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres }) => {
     const [hoveredGenre, setHoveredGenre] = useState<string | null>(null);
+    const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
     if (!subgenres) {
         return (
@@ -91,8 +92,9 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
         ...createRingSectors(ring3Entries, 0.85, 1.00, ring1Entries.length + ring2Entries.length)
     ];
 
-    const activeSector = hoveredGenre 
-        ? allSectors.find(s => s.genre === hoveredGenre) 
+    const effectiveGenre = hoveredGenre || selectedGenre;
+    const activeSector = effectiveGenre 
+        ? allSectors.find(s => s.genre === effectiveGenre) 
         : allSectors[0];
 
     return (
@@ -122,13 +124,21 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
                     </AnimatePresence>
                 </div>
 
-                <svg viewBox="-1.1 -1.1 2.2 2.2" className="transform -rotate-90 w-full h-full relative z-10 filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                <svg 
+                    viewBox="-1.1 -1.1 2.2 2.2" 
+                    className="transform -rotate-90 w-full h-full relative z-10 filter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-default"
+                    onClick={() => setSelectedGenre(null)}
+                >
                     {allSectors.map((sector) => {
                         const isHovered = hoveredGenre === sector.genre;
-                        const opacity = hoveredGenre ? (isHovered ? 1 : 0.25) : 0.9;
+                        const isSelected = selectedGenre === sector.genre;
+                        const isActive = isHovered || isSelected;
                         
-                        const innerRadius = isHovered ? sector.innerRadBase - 0.02 : sector.innerRadBase;
-                        const outerRadius = isHovered ? sector.outerRadBase + 0.02 : sector.outerRadBase;
+                        const anyActive = hoveredGenre || selectedGenre;
+                        const opacity = anyActive ? (isActive ? 1 : 0.25) : 0.9;
+                        
+                        const innerRadius = isActive ? sector.innerRadBase - 0.02 : sector.innerRadBase;
+                        const outerRadius = isActive ? sector.outerRadBase + 0.02 : sector.outerRadBase;
 
                         const [startX, startY] = getCoordinatesForPercent(sector.start, outerRadius);
                         const [endX, endY] = getCoordinatesForPercent(sector.end, outerRadius);
@@ -172,6 +182,10 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
                                 transition={{ delay: sector.colorIndex * 0.015, duration: 0.4 }}
                                 onMouseEnter={() => setHoveredGenre(sector.genre)}
                                 onMouseLeave={() => setHoveredGenre(null)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedGenre(selectedGenre === sector.genre ? null : sector.genre);
+                                }}
                                 className="cursor-pointer transition-all duration-300 pointer-events-auto"
                             />
                         );

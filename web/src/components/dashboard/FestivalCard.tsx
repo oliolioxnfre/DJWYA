@@ -13,11 +13,14 @@ export interface FestivalData {
     matched_count: number;
     total_artists: number;
     shared_artists: string[];
+    other_artists?: string[];
     lat: number | null;
     lng: number | null;
     location?: string;
     start_date?: string;
     end_date?: string;
+    state?: string;
+    country?: string;
     size?: number | string;
     type?: string;
     fest_subgenres?: Record<string, number>;
@@ -155,10 +158,13 @@ export default function FestivalCard({
                                             <MapPin className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
                                             {festival.location || "Location Unknown"}
                                         </div>
-                                        {festival.start_date && (
+                                        {(festival.start_date || festival.end_date) && (
                                             <div className="flex items-center text-pink-400">
                                                 <span className="text-gray-500 mr-2 opacity-50">|</span>
-                                                {festival.start_date}
+                                                {festival.start_date?.split('-').slice(1).join('-') || "TBA"}
+                                                {festival.end_date && festival.end_date !== festival.start_date && (
+                                                    <> - {festival.end_date.split('-').slice(1).join('-')}</>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -264,6 +270,28 @@ export default function FestivalCard({
                                                 ))}
                                             </div>
                                         </div>
+
+                                        {/* All Other Artists */}
+                                        {festival.other_artists && festival.other_artists.length > 0 && (
+                                            <div className="space-y-4 pt-4 border-t border-white/5">
+                                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] pl-1">
+                                                    Attending Artists ({festival.other_artists.length})
+                                                </h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {festival.other_artists.map((artist, idx) => (
+                                                        <motion.span
+                                                            key={idx}
+                                                            initial={{ scale: 0.8, opacity: 0 }}
+                                                            animate={{ scale: 1, opacity: 1 }}
+                                                            transition={{ delay: Math.min(idx * 0.01, 1) }}
+                                                            className="px-4 py-1.5 rounded-xl bg-gray-500/10 text-xs font-semibold text-white border border-gray-500/20"
+                                                        >
+                                                            {artist}
+                                                        </motion.span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>

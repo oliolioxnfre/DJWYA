@@ -121,6 +121,7 @@ export default function MapBox({ festivals, selectedIndex, onSelectFestival }: M
             <MapUpdater 
                 center={activeCenter} 
                 zoom={activeZoom} 
+                //map waypoint view shift offset (view offset)
                 offsetY={selectedIndex >= 0 ? 120 : 0} 
             />
 

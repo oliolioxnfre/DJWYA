@@ -37,12 +37,44 @@ export default function FestivalsPage() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [sortBy, setSortBy] = useState("total_match");
     const [filterFullyAnnounced, setFilterFullyAnnounced] = useState(false);
+    const [filterRegion, setFilterRegion] = useState("All");
+
+    const US_REGIONS: Record<string, string[]> = {
+        "East Coast": ["Maine", "New Hampshire", "Massachusetts", "Rhode Island", "Connecticut", "New York", "New Jersey", "Pennsylvania", "Delaware", "Maryland", "Virginia", "North Carolina", "South Carolina", "Georgia", "Florida", "District of Columbia"],
+        "Midwest": ["Ohio", "Indiana", "Illinois", "Michigan", "Wisconsin", "Minnesota", "Iowa", "Missouri", "North Dakota", "South Dakota", "Nebraska", "Kansas"],
+        "South": ["Kentucky", "Tennessee", "Alabama", "Mississippi", "Arkansas", "Louisiana", "Oklahoma", "Texas", "West Virginia"],
+        "Mountains & Southwest": ["Montana", "Idaho", "Wyoming", "Colorado", "New Mexico", "Arizona", "Utah", "Nevada"],
+        "West Coast": ["Washington", "Oregon", "California", "Alaska", "Hawaii"]
+    };
+
+    const determineRegion = (state?: string, country?: string) => {
+        if (!country) return "Unknown";
+        if (country !== "United States") {
+            if (country === "Canada") return "Canada";
+            if (["Mexico", "Colombia", "Brazil", "Argentina"].includes(country)) return "Latin America";
+            if (["Thailand", "Philippines", "Australia", "Japan"].includes(country)) return "Asia & Oceania";
+            if (["Egypt", "South Africa"].includes(country)) return "Africa & Middle East";
+            return "Europe"; // Defaulting the rest of International to Europe
+        }
+        if (!state) return "Unknown";
+        
+        for (const [regionName, states] of Object.entries(US_REGIONS)) {
+            if (states.includes(state)) {
+                return regionName;
+            }
+        }
+        return "Unknown";
+    };
 
     const processedFestivals = useMemo(() => {
         let result = [...festivals];
 
         if (filterFullyAnnounced) {
             result = result.filter(f => f.tba !== true);
+        }
+
+        if (filterRegion !== "All") {
+            result = result.filter(f => determineRegion(f.state, f.country) === filterRegion);
         }
 
         result.sort((a, b) => {
@@ -61,13 +93,13 @@ export default function FestivalsPage() {
         });
 
         return result;
-    }, [festivals, filterFullyAnnounced, sortBy]);
+    }, [festivals, filterFullyAnnounced, sortBy, filterRegion]);
 
     // Reset card when filters change
     useEffect(() => {
         setIsCardOpen(false);
         setSelectedIndex(-1);
-    }, [filterFullyAnnounced, sortBy]);
+    }, [filterFullyAnnounced, sortBy, filterRegion]);
 
     useEffect(() => {
         async function loadFestivals() {
@@ -100,6 +132,8 @@ export default function FestivalsPage() {
                     location: f.location,
                     start_date: f.start_date,
                     end_date: f.end_date,
+                    state: f.state,
+                    country: f.country,
                     size: f.size,
                     type: f.type,
                     fest_subgenres: f.fest_subgenres,
@@ -255,32 +289,37 @@ export default function FestivalsPage() {
                 )}
             </div>
 
-            {/* Persistent Reopen Button - Below Logo */}
+            {/* Bottom Pill Navigation */}
             {processedFestivals.length > 0 && !isCardOpen && !isExpanded && (
-                <div className="fixed top-28 left-8 z-[2100] flex flex-col gap-4">
-                    <button
-                        onClick={handleStartFinder}
-                        className="w-14 h-14 bg-black/40 hover:bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-2xl group"
-                        title="Discovery Finder"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)] group-hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all">
-                            <Compass className="w-5 h-5 text-white" />
-                        </div>
-                    </button>
-                    
-                    <button
-                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                        className={`w-14 h-14 bg-black/40 hover:bg-black/60 backdrop-blur-xl border ${isSettingsOpen ? 'border-purple-500/50' : 'border-white/10'} rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-2xl group`}
-                        title="Filters & Sorting"
-                    >
-                        <Settings2 className={`w-5 h-5 ${isSettingsOpen ? 'text-purple-400' : 'text-gray-400 group-hover:text-white'} transition-colors`} />
-                    </button>
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[2100]">
+                    <div className="flex items-stretch h-16 shadow-[0_0_30px_rgba(168,85,247,0.4)] rounded-full group cursor-pointer hover:scale-105 active:scale-95 transition-transform overflow-hidden">
+                        {/* GO Button */}
+                        <button
+                            onClick={handleStartFinder}
+                            className="flex items-center justify-center px-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition-all border border-white/20 border-r-0 rounded-l-full"
+                            title="Discovery Finder"
+                        >
+                            <span className="text-3xl font-black tracking-widest text-white mt-0.5">GO</span>
+                        </button>
+                        
+                        {/* Divider Gap Line */}
+                        <div className="w-[1px] bg-white/20 self-center h-8" />
+                        
+                        {/* Settings Button */}
+                        <button
+                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                            className={`flex items-center justify-center px-6 bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 transition-all border border-white/20 border-l-0 rounded-r-full ${isSettingsOpen ? 'brightness-125' : ''}`}
+                            title="Filters & Sorting"
+                        >
+                            <Settings2 className="w-6 h-6 text-white" />
+                        </button>
+                    </div>
                 </div>
             )}
 
             {/* Settings Menu Panel */}
             {isSettingsOpen && !isCardOpen && !isExpanded && (
-                <div className="fixed top-28 left-28 z-[2100] w-[300px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-in fade-in slide-in-from-left-4 duration-300">
+                <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[2100] w-[320px] bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-white font-bold text-lg tracking-tight">Display Settings</h3>
                         <button onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-white transition-colors">
@@ -305,6 +344,40 @@ export default function FestivalsPage() {
                                     <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${filterFullyAnnounced ? 'transform translate-x-4' : ''}`}></div>
                                 </div>
                             </label>
+                        </div>
+                        <div className="h-px bg-white/10 w-full" />
+
+                        {/* Region Filter */}
+                        <div className="z-50 relative">
+                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Region</h4>
+                            <div className="relative">
+                                <select 
+                                    value={filterRegion}
+                                    onChange={(e) => setFilterRegion(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors appearance-none cursor-pointer hover:bg-black/60"
+                                >
+                                    <option value="All">All Regions</option>
+                                    <optgroup label="United States" className="bg-[#1a1a24] text-white">
+                                        <option value="East Coast">East Coast</option>
+                                        <option value="Midwest">Midwest</option>
+                                        <option value="South">South</option>
+                                        <option value="Mountains & Southwest">Mountains & Southwest</option>
+                                        <option value="West Coast">West Coast</option>
+                                    </optgroup>
+                                    <optgroup label="International" className="bg-[#1a1a24] text-white">
+                                        <option value="Canada">Canada</option>
+                                        <option value="Europe">Europe</option>
+                                        <option value="Latin America">Latin America</option>
+                                        <option value="Asia & Oceania">Asia & Oceania</option>
+                                        <option value="Africa & Middle East">Africa & Middle East</option>
+                                    </optgroup>
+                                </select>
+                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="h-px bg-white/10 w-full" />

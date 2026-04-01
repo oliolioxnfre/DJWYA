@@ -34,7 +34,7 @@ def get_user_data(user_id="demo_user"):
 def get_all_festivals():
     """Fetches all festivals including lineup, sonic_dna, subgenres, and coordinates."""
     print("Fetching festivals...")
-    response = supabase.table("festivals").select("name, event_artists(artists(name)), sonic_dna, subgenres, lat, lng, location, start_date, end_date, size, type, tba").execute()
+    response = supabase.table("festivals").select("name, event_artists(artists(name)), sonic_dna, subgenres, lat, lng, location, start_date, end_date, size, type, tba, state, country").execute()
     return response.data
 
 def cosine_similarity(vec1, vec2):
@@ -144,7 +144,10 @@ def run_matching_engine(user_id="demo_user"):
         total_score = base_artist_score * (synergy_percentage / 100)
         
         sorted_overlap = sorted(list(overlap), key=lambda x: user_artists_map.get(x, 0), reverse=True)
+        other_artists = lineup_set - overlap
+        sorted_other = sorted(list(other_artists))
         
+
         match_scores.append({
             'festival': fest_name,
             'total_match': total_score,
@@ -154,6 +157,7 @@ def run_matching_engine(user_id="demo_user"):
             'matched_count': len(overlap),
             'total_artists': len(lineup_set),
             'shared_artists': [name.title() for name in sorted_overlap],
+            'other_artists': [name.title() for name in sorted_other],
             'lat': fest.get('lat'),
             'lng': fest.get('lng'),
             'location': fest.get('location'),
@@ -162,7 +166,9 @@ def run_matching_engine(user_id="demo_user"):
             'type': fest.get('type'),
             'fest_subgenres': fest.get('subgenres'),
             'tba': fest.get('tba'),
-            'end_date': fest.get('end_date')
+            'end_date': fest.get('end_date'),
+            'state': fest.get('state'),
+            'country': fest.get('country')
         })
         
     match_scores.sort(key=lambda x: x['total_match'], reverse=True)
