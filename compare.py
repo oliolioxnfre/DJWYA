@@ -34,7 +34,7 @@ def get_user_data(user_id="demo_user"):
 def get_all_festivals():
     """Fetches all festivals including lineup, sonic_dna, subgenres, and coordinates."""
     print("Fetching festivals...")
-    response = supabase.table("festivals").select("name, lineup, sonic_dna, subgenres, lat, lng, location, start_date, size, type").execute()
+    response = supabase.table("festivals").select("name, event_artists(artists(name)), sonic_dna, subgenres, lat, lng, location, start_date, size, type").execute()
     return response.data
 
 def cosine_similarity(vec1, vec2):
@@ -106,7 +106,12 @@ def run_matching_engine(user_id="demo_user"):
 
     for fest in festivals:
         fest_name = fest.get('name', 'Unknown Festival')
-        raw_lineup = fest.get('lineup') or []
+        event_artists = fest.get('event_artists', [])
+        raw_lineup = []
+        if event_artists:
+            for ea in event_artists:
+                if ea.get('artists') and ea['artists'].get('name'):
+                    raw_lineup.append(ea['artists']['name'])
         
         lineup_set = set([artist.lower().strip() for artist in raw_lineup])
         if len(lineup_set) == 0:
@@ -165,7 +170,7 @@ def run_matching_engine(user_id="demo_user"):
 if __name__ == "__main__":
     print("Starting Hybrid Match Engine...\n")
     # Using a valid UUID for a test user if possible, or demo_user
-    test_uid = "af78e583-fb39-4a05-9ec4-7bc4bb2286e6"
+    test_uid = "e22a4563-0b81-41c8-b0b0-d1aa4704f0cf"
     results = run_matching_engine(test_uid) 
     
     if results:

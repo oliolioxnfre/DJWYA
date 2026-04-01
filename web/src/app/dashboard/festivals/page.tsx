@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, AlertCircle, Compass } from "lucide-react";
+import { Loader2, AlertCircle, Compass, Search, X, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import FestivalCard, { FestivalData } from "@/components/dashboard/FestivalCard";
 import type { MapBoxProps } from "@/components/dashboard/MapBox";
@@ -29,6 +29,9 @@ export default function FestivalsPage() {
     const [isCardOpen, setIsCardOpen] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isIntroDismissed, setIsIntroDismissed] = useState(false);
 
     useEffect(() => {
         async function loadFestivals() {
@@ -108,7 +111,16 @@ export default function FestivalsPage() {
         setHasStarted(true);
         setSelectedIndex(idx);
         setIsCardOpen(true);
+        setSearchQuery("");
+        setIsSearchFocused(false);
     };
+
+    const filteredFestivals = searchQuery.trim() === ""
+        ? []
+        : festivals
+            .map((f, index) => ({ ...f, originalIndex: index }))
+            .filter(f => f.festival.toLowerCase().includes(searchQuery.toLowerCase()))
+            .slice(0, 8);
 
     if (loading) {
         return (
@@ -135,6 +147,84 @@ export default function FestivalsPage() {
     return (
         <div className="h-screen w-full bg-[#0a0a0a] overflow-hidden relative">
             <Header />
+
+            {/* Top Center Search Bar */}
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[2500] w-full max-w-md px-4">
+                <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-gray-400 group-focus-within:text-purple-400 transition-colors" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Search for a festival..."
+                        className="block w-full pl-11 pr-11 py-3 bg-[#1a1a24]/80 backdrop-blur-xl border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all shadow-2xl"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => setIsSearchFocused(true)}
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => {
+                                setSearchQuery("");
+                                setIsSearchFocused(false);
+                            }}
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-white transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Search Results Dropdown */}
+                {isSearchFocused && filteredFestivals.length > 0 && (
+                    <div className="absolute mt-2 w-full left-0 px-4">
+                        <div className="bg-[#1a1a24]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            {filteredFestivals.map((result) => {
+                                const color = result.synergy_match > 80 ? "#22c55e" : result.synergy_match > 50 ? "#eab308" : "#ef4444";
+                                return (
+                                    <button
+                                        key={result.originalIndex}
+                                        className="w-full text-left px-4 py-3 hover:bg-purple-500/10 flex items-center gap-3 transition-colors border-b border-white/5 last:border-0"
+                                        onClick={() => handleSelectFestival(result.originalIndex)}
+                                    >
+                                        <div
+                                            className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(168,85,247,0.5)]"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-sm font-medium text-gray-200 truncate">{result.festival}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center">
+                                                    <MapPin className="w-2.5 h-2.5 mr-1" />
+                                                    {result.location}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-purple-400">
+                                                    {Math.round(result.synergy_match)}% Match
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Persistent Reopen Button - Below Logo */}
+            {festivals.length > 0 && !isCardOpen && !isExpanded && (
+                <div className="fixed top-28 left-8 z-[2100]">
+                    <button
+                        onClick={handleStartFinder}
+                        className="w-14 h-14 bg-black/40 hover:bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-2xl group"
+                        title="Discovery Finder"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)] group-hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all">
+                            <Compass className="w-5 h-5 text-white" />
+                        </div>
+                    </button>
+                </div>
+            )}
             
             <div className={`absolute inset-0 transition-all duration-700 ease-in-out ${isExpanded ? 'blur-xl scale-105 opacity-40' : 'blur-0 scale-100 opacity-100'}`}>
                     <MapBox
@@ -145,9 +235,16 @@ export default function FestivalsPage() {
                 </div>
 
                 {/* Intro Overlay */}
-                {!hasStarted && festivals.length > 0 && (
-                    <div className="absolute inset-x-8 top-10 mx-auto max-w-lg z-[1000] pointer-events-none">
-                        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center shadow-2xl pointer-events-auto">
+                {!hasStarted && !isIntroDismissed && festivals.length > 0 && (
+                    <div className="absolute inset-x-8 top-32 mx-auto max-w-lg z-[1000] pointer-events-none">
+                        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center shadow-2xl pointer-events-auto relative">
+                            {/* Close button */}
+                            <button 
+                                onClick={() => setIsIntroDismissed(true)}
+                                className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                             <Compass className="w-12 h-12 text-purple-400 mx-auto mb-4" />
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-4">
                                 Festival Finder
