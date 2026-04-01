@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabaseClient";
 
 interface TopSubgenresChartProps {
     subgenres: Record<string, number> | null;
@@ -10,6 +11,34 @@ interface TopSubgenresChartProps {
 export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres }) => {
     const [hoveredGenre, setHoveredGenre] = useState<string | null>(null);
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+    const [genreDetails, setGenreDetails] = useState<Record<string, { name: string; description: string }>>({});
+
+    const entries = Object.entries(subgenres || {})
+        .filter(([genre]) => genre !== "electronic" && genre !== "rave")
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25);
+
+    useEffect(() => {
+        if (entries.length === 0) return;
+
+        const fetchDescriptions = async () => {
+            const slugs = entries.map(([slug]) => slug);
+            const { data, error } = await supabase
+                .from("genres")
+                .select("slug, name, description")
+                .in("slug", slugs);
+
+            if (data && !error) {
+                const mapping = data.reduce((acc, curr) => ({
+                    ...acc,
+                    [curr.slug]: { name: curr.name, description: curr.description }
+                }), {});
+                setGenreDetails(mapping);
+            }
+        };
+
+        fetchDescriptions();
+    }, [subgenres]);
 
     if (!subgenres) {
         return (
@@ -19,10 +48,7 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
         );
     }
 
-    const entries = Object.entries(subgenres)
-        .filter(([genre]) => genre !== "electronic" && genre !== "rave")
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 25);
+    // Entries already calculated above for the useEffect
 
     if (entries.length === 0) {
         return (
@@ -98,8 +124,9 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
         : allSectors[0];
 
     return (
-        <div className="flex flex-col items-center justify-center py-6 w-full">
-            <div className="relative w-72 h-72 md:w-96 md:h-96 group mb-8">
+        <div className="flex flex-col md:flex-row items-center md:items-start justify-center py-6 w-full gap-8 md:gap-16">
+            {/* Chart Column */}
+            <div className="relative w-72 h-72 md:w-[450px] md:h-[450px] group flex-shrink-0">
                 <div className="absolute inset-0 rounded-full bg-brand-purple/20 blur-3xl opacity-0 group-hover:opacity-60 transition-opacity duration-700" />
                 
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
@@ -191,6 +218,65 @@ export const TopSubgenresChart: React.FC<TopSubgenresChartProps> = ({ subgenres 
                         );
                     })}
                 </svg>
+            </div>
+
+            {/* Description Panel */}
+            <div className="flex-1 flex flex-col justify-center min-h-[300px] md:pt-12">
+                <AnimatePresence mode="wait">
+                    {effectiveGenre ? (
+                        <motion.div
+                            key={effectiveGenre}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            <div className="space-y-1">
+                                <h3 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white">
+                                    {genreDetails[effectiveGenre]?.name || effectiveGenre}
+                                </h3>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-1 w-12 bg-brand-purple rounded-full" />
+                                    <span className="text-zinc-500 font-bold uppercase tracking-widest text-xs">
+                                        Subgenre Insight
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p className="text-zinc-400 text-lg md:text-xl leading-relaxed max-w-2xl font-medium italic">
+                                {genreDetails[effectiveGenre]?.description || 
+                                 `Exploring the sonic landscape of ${effectiveGenre}. This profile represents a significant pillar of your musical DNA, characterized by its unique rhythmic patterns and cultural impact within the electronic scene.`}
+                            </p>
+                            
+                            <div className="pt-4 flex gap-8">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Weight</span>
+                                    <span className="text-2xl font-black text-white">{subgenres[effectiveGenre]}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Global Pct</span>
+                                    <span className="text-2xl font-black text-white">
+                                        {((subgenres[effectiveGenre] / globalTotal) * 100).toFixed(1)}%
+                                    </span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex flex-col space-y-4"
+                        >
+                            <h3 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-zinc-800">
+                                Select a Genre
+                            </h3>
+                            <p className="text-zinc-600 text-lg italic max-w-md">
+                                Hover or click segments of your Sonic Universe to dive deep into the specific subgenres that define your taste.
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
