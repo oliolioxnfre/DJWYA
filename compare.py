@@ -34,7 +34,7 @@ def get_user_data(user_id="demo_user"):
 def get_all_festivals():
     """Fetches all festivals including lineup, sonic_dna, subgenres, and coordinates."""
     print("Fetching festivals...")
-    response = supabase.table("festivals").select("name, event_artists(artists(name)), sonic_dna, subgenres, lat, lng, location, start_date, size, type").execute()
+    response = supabase.table("festivals").select("name, event_artists(artists(name)), sonic_dna, subgenres, lat, lng, location, start_date, end_date, size, type, tba").execute()
     return response.data
 
 def cosine_similarity(vec1, vec2):
@@ -160,7 +160,9 @@ def run_matching_engine(user_id="demo_user"):
             'start_date': fest.get('start_date'),
             'size': fest.get('size'),
             'type': fest.get('type'),
-            'fest_subgenres': fest.get('subgenres')
+            'fest_subgenres': fest.get('subgenres'),
+            'tba': fest.get('tba'),
+            'end_date': fest.get('end_date')
         })
         
     match_scores.sort(key=lambda x: x['total_match'], reverse=True)

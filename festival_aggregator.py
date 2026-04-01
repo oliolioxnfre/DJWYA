@@ -3,7 +3,7 @@ import csv
 import glob
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from artists_categorize import categorize_artist, bulk_categorize_artists, sync_artists_to_supabase
+from artists_categorize import categorize_artist, bulk_categorize_artists, sync_artists_to_supabase, ArtistCleaner
 
 load_dotenv()
 
@@ -39,9 +39,11 @@ def aggregate_csv_festivals():
                 # The column with artist names is usually 'Artist Name(s)'
                 artists_str = row.get('Artist Name(s)', '')
                 if artists_str:
-                    # Split by semicolon to separate collaborations
+                    # 1. Split by semicolon to separate collaborations
                     collaborators = [name.strip() for name in artists_str.split(';')]
-                    for name in collaborators:
+                    # 2. Use shared cleaner to handle &, x, b2b, and sub-groupings
+                    cleaned_names, _ = ArtistCleaner.clean_lineup(collaborators)
+                    for name in cleaned_names:
                         unique_artists_counts[name] = unique_artists_counts.get(name, 0) + 1
         
         artists_list = list(unique_artists_counts.keys())

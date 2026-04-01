@@ -24,6 +24,63 @@ def get_electronic_genres(genres):
     return [genre for genre in genres if manager.is_electronic(genre)]
 
 import time
+import re
+
+class ArtistCleaner:
+    @staticmethod
+    def clean_lineup(artists_list):
+        """
+        Cleans a list of artist strings. 
+        Splits collaborations (A & B, A x B, A b2b B),
+        Handles parenthetical aliases/tags, 
+        And detects TBA placeholders.
+        Returns: (cleaned_list, tba_triggered)
+        """
+        cleaned_artists = set()
+        tba_flag = False
+        
+        # Regex for splitting common collaboration delimiters
+        split_pattern = r'\s+&\s+|\s+x\s+|\s+b2b\s+|\s+X\s+|\s+B2B\s+'
+        
+        for artist_name in artists_list:
+            if not artist_name: continue
+            
+            upper_name = artist_name.upper()
+            
+            # 1. TBA/TBD Detection
+            if "TBA" in upper_name or "TBD" in upper_name or artist_name.count("?") >= 3:
+                tba_flag = True
+                continue
+                
+            # 2. Parentheses Handling
+            match = re.search(r'\((.*?)\)', artist_name)
+            if match:
+                inner_content = match.group(1)
+                # If inner contains split chars, extract and split the inner part (e.g. SUBJOHNICS (A & B))
+                if re.search(split_pattern, inner_content):
+                    sub_artists = re.split(split_pattern, inner_content)
+                    for sa in sub_artists:
+                        if sa.strip(): cleaned_artists.add(sa.strip())
+                else:
+                    # If inner is just a tag (e.g. Goldie (UK)), strip it and try to split the remainder
+                    base_name = re.sub(r'\s*\(.*?\)\s*', '', artist_name).strip()
+                    if base_name:
+                        if re.search(split_pattern, base_name):
+                            sub_artists = re.split(split_pattern, base_name)
+                            for sa in sub_artists:
+                                if sa.strip(): cleaned_artists.add(sa.strip())
+                        else:
+                            cleaned_artists.add(base_name)
+            else:
+                # 3. Standard splitting (e.g. A & B)
+                if re.search(split_pattern, artist_name):
+                    sub_artists = re.split(split_pattern, artist_name)
+                    for sa in sub_artists:
+                        if sa.strip(): cleaned_artists.add(sa.strip())
+                else:
+                    cleaned_artists.add(artist_name.strip())
+                    
+        return list(cleaned_artists), tba_flag
 
 def get_artist_genres(artist_name):
     """Returns all genres for an artist from Last.fm, with heavy persistence for accuracy."""
@@ -85,11 +142,18 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
     if not existing_data and supabase_client:
         slug = artist_name.lower().replace(" ", "-")
         try:
-            res = supabase_client.table("artists").select("*, artist_genres(genres(slug))").eq("name_slug", slug).execute()
+            res = supabase_client.table("artists").select("*, artist_genres(vote_count, genres(slug))").eq("name_slug", slug).execute()
             if res.data:
                 existing_data = res.data[0]
                 ag_list = existing_data.get("artist_genres") or []
                 existing_data['genres'] = [ag['genres']['slug'] for ag in ag_list if ag.get('genres') and ag['genres'].get('slug')]
+                
+                gv = {}
+                for ag in ag_list:
+                    g = ag.get('genres')
+                    if g and g.get('slug'):
+                        gv[g['slug']] = ag.get('vote_count', 5)
+                existing_data['genre_votes'] = gv
         except Exception:
             pass
 
@@ -104,6 +168,7 @@ def categorize_artist(artist_name, fallback_genres=None, filter_electronic=True,
         return {
             "name": existing_data.get('name', artist_name),
             "genres": genres,
+            "genre_votes": existing_data.get('genre_votes', {}),
             "sonic_dna": existing_data.get('sonic_dna', {})
         }
 
@@ -217,11 +282,19 @@ def bulk_categorize_artists(artist_requests, supabase_client=None, max_workers=1
         for i in range(0, len(all_slugs), 500):
             batch_slugs = all_slugs[i:i+500]
             try:
-                res = supabase_client.table("artists").select("*, artist_genres(genres(slug))").in_("name_slug", batch_slugs).execute()
+                res = supabase_client.table("artists").select("*, artist_genres(vote_count, genres(slug))").in_("name_slug", batch_slugs).execute()
                 if res.data:
                     for row in res.data:
                         ag_list = row.get("artist_genres") or []
                         row['genres'] = [ag['genres']['slug'] for ag in ag_list if ag.get('genres') and ag['genres'].get('slug')]
+                        
+                        gv = {}
+                        for ag in ag_list:
+                            g = ag.get('genres')
+                            if g and g.get('slug'):
+                                gv[g['slug']] = ag.get('vote_count', 5)
+                        row['genre_votes'] = gv
+                        
                         existing_map[row["name_slug"]] = row
             except Exception as e:
                 print(f"⚠️ Warning: Bulk lookup failed: {e}")

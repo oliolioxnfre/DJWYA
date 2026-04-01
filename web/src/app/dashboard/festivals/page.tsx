@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, AlertCircle, Compass, Search, X, MapPin } from "lucide-react";
+import { Loader2, AlertCircle, Compass, Search, X, MapPin, Settings2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import FestivalCard, { FestivalData } from "@/components/dashboard/FestivalCard";
 import type { MapBoxProps } from "@/components/dashboard/MapBox";
@@ -33,6 +33,42 @@ export default function FestivalsPage() {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isIntroDismissed, setIsIntroDismissed] = useState(false);
 
+    // Settings States
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [sortBy, setSortBy] = useState("total_match");
+    const [filterFullyAnnounced, setFilterFullyAnnounced] = useState(false);
+
+    const processedFestivals = useMemo(() => {
+        let result = [...festivals];
+
+        if (filterFullyAnnounced) {
+            result = result.filter(f => f.tba !== true);
+        }
+
+        result.sort((a, b) => {
+            if (sortBy === "total_match") {
+                return (b.total_match || 0) - (a.total_match || 0);
+            } else if (sortBy === "total_artists") {
+                return (b.total_artists || 0) - (a.total_artists || 0);
+            } else if (sortBy === "synergy_match") {
+                return (b.synergy_match || 0) - (a.synergy_match || 0);
+            } else if (sortBy === "artist_score") {
+                return (b.artist_score || 0) - (a.artist_score || 0);
+            } else if (sortBy === "artist_perc") {
+                return (b.artist_perc || 0) - (a.artist_perc || 0);
+            }
+            return 0;
+        });
+
+        return result;
+    }, [festivals, filterFullyAnnounced, sortBy]);
+
+    // Reset card when filters change
+    useEffect(() => {
+        setIsCardOpen(false);
+        setSelectedIndex(-1);
+    }, [filterFullyAnnounced, sortBy]);
+
     useEffect(() => {
         async function loadFestivals() {
             try {
@@ -54,17 +90,25 @@ export default function FestivalsPage() {
 
                 const json = await res.json();
 
-                // Filter out festivals without location coordinates for mapping
+                // Filter out festivals without location coordinates OR those that have already ended
+                const today = new Date().toISOString().split('T')[0];
+                
                 const mappedMatches = (json.data || []).map((f: any) => ({
                     ...f,
                     lat: f.lat ? parseFloat(f.lat) : null,
                     lng: f.lng ? parseFloat(f.lng) : null,
                     location: f.location,
                     start_date: f.start_date,
+                    end_date: f.end_date,
                     size: f.size,
                     type: f.type,
-                    fest_subgenres: f.fest_subgenres
-                })).filter((f: any) => f.lat !== null && f.lng !== null);
+                    fest_subgenres: f.fest_subgenres,
+                    tba: f.tba
+                })).filter((f: any) => 
+                    f.lat !== null && 
+                    f.lng !== null && 
+                    (!f.end_date || f.end_date >= today)
+                );
 
                 setFestivals(mappedMatches);
             } catch (err: unknown) {
@@ -83,7 +127,7 @@ export default function FestivalsPage() {
     }, []);
 
     const handleStartFinder = () => {
-        if (festivals.length > 0) {
+        if (processedFestivals.length > 0) {
             setHasStarted(true);
             setSelectedIndex(0);
             setIsCardOpen(true);
@@ -91,7 +135,7 @@ export default function FestivalsPage() {
     };
 
     const handleNext = () => {
-        if (selectedIndex < festivals.length - 1) {
+        if (selectedIndex < processedFestivals.length - 1) {
             setSelectedIndex(s => s + 1);
         }
     };
@@ -117,7 +161,7 @@ export default function FestivalsPage() {
 
     const filteredFestivals = searchQuery.trim() === ""
         ? []
-        : festivals
+        : processedFestivals
             .map((f, index) => ({ ...f, originalIndex: index }))
             .filter(f => f.festival.toLowerCase().includes(searchQuery.toLowerCase()))
             .slice(0, 8);
@@ -212,8 +256,8 @@ export default function FestivalsPage() {
             </div>
 
             {/* Persistent Reopen Button - Below Logo */}
-            {festivals.length > 0 && !isCardOpen && !isExpanded && (
-                <div className="fixed top-28 left-8 z-[2100]">
+            {processedFestivals.length > 0 && !isCardOpen && !isExpanded && (
+                <div className="fixed top-28 left-8 z-[2100] flex flex-col gap-4">
                     <button
                         onClick={handleStartFinder}
                         className="w-14 h-14 bg-black/40 hover:bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-2xl group"
@@ -223,19 +267,96 @@ export default function FestivalsPage() {
                             <Compass className="w-5 h-5 text-white" />
                         </div>
                     </button>
+                    
+                    <button
+                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                        className={`w-14 h-14 bg-black/40 hover:bg-black/60 backdrop-blur-xl border ${isSettingsOpen ? 'border-purple-500/50' : 'border-white/10'} rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-2xl group`}
+                        title="Filters & Sorting"
+                    >
+                        <Settings2 className={`w-5 h-5 ${isSettingsOpen ? 'text-purple-400' : 'text-gray-400 group-hover:text-white'} transition-colors`} />
+                    </button>
                 </div>
             )}
+
+            {/* Settings Menu Panel */}
+            {isSettingsOpen && !isCardOpen && !isExpanded && (
+                <div className="fixed top-28 left-28 z-[2100] w-[300px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl animate-in fade-in slide-in-from-left-4 duration-300">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-white font-bold text-lg tracking-tight">Display Settings</h3>
+                        <button onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {/* Filters */}
+                        <div>
+                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Filters</h4>
+                            <label className="flex items-center justify-between cursor-pointer group">
+                                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">Fully Announced Only</span>
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only" 
+                                        checked={filterFullyAnnounced}
+                                        onChange={(e) => setFilterFullyAnnounced(e.target.checked)}
+                                    />
+                                    <div className={`block w-10 h-6 rounded-full transition-colors ${filterFullyAnnounced ? 'bg-purple-500' : 'bg-white/10'}`}></div>
+                                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${filterFullyAnnounced ? 'transform translate-x-4' : ''}`}></div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div className="h-px bg-white/10 w-full" />
+
+                        {/* Sorting */}
+                        <div>
+                            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Sort By</h4>
+                            <div className="space-y-3">
+                                {[
+                                    { id: 'total_match', label: 'Total Match Score (Default)' },
+                                    { id: 'synergy_match', label: 'DNA Synergy Match' },
+                                    { id: 'artist_perc', label: 'Artist Overlap %' },
+                                    { id: 'artist_score', label: 'Artist Overlap Score' },
+                                    { id: 'total_artists', label: 'Lineup Size' }
+                                ].map(sortOpt => (
+                                    <label key={sortOpt.id} className="flex items-center space-x-3 cursor-pointer group">
+                                        <div className="relative flex items-center justify-center">
+                                            <input 
+                                                type="radio" 
+                                                name="sortOpt" 
+                                                className="sr-only"
+                                                checked={sortBy === sortOpt.id}
+                                                onChange={() => setSortBy(sortOpt.id)}
+                                            />
+                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${sortBy === sortOpt.id ? 'border-purple-500' : 'border-gray-500 group-hover:border-white'}`}>
+                                                {sortBy === sortOpt.id && (
+                                                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className={`text-sm transition-colors ${sortBy === sortOpt.id ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                                            {sortOpt.label}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             
             <div className={`absolute inset-0 transition-all duration-700 ease-in-out ${isExpanded ? 'blur-xl scale-105 opacity-40' : 'blur-0 scale-100 opacity-100'}`}>
                     <MapBox
-                        festivals={festivals}
+                        festivals={processedFestivals}
                         selectedIndex={isCardOpen ? selectedIndex : -1}
                         onSelectFestival={handleSelectFestival}
                     />
                 </div>
 
                 {/* Intro Overlay */}
-                {!hasStarted && !isIntroDismissed && festivals.length > 0 && (
+                {!hasStarted && !isIntroDismissed && processedFestivals.length > 0 && (
                     <div className="absolute inset-x-8 top-32 mx-auto max-w-lg z-[1000] pointer-events-none">
                         <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center shadow-2xl pointer-events-auto relative">
                             {/* Close button */}
@@ -265,7 +386,7 @@ export default function FestivalsPage() {
                 )}
 
                 {/* No Data Overlay */}
-                {festivals.length === 0 && (
+                {processedFestivals.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-black/60 backdrop-blur-sm">
                         <div className="bg-black border border-white/10 rounded-2xl p-8 text-center max-w-sm">
                             <h2 className="text-xl font-bold text-white mb-2">No Matches Found</h2>
@@ -279,8 +400,8 @@ export default function FestivalsPage() {
                 {/* Dynamic Festival Card Overlay */}
                 {isCardOpen && selectedIndex >= 0 && (
                     <FestivalCard
-                        festival={festivals[selectedIndex]}
-                        hasNext={selectedIndex < festivals.length - 1}
+                        festival={processedFestivals[selectedIndex]}
+                        hasNext={selectedIndex < processedFestivals.length - 1}
                         hasPrev={selectedIndex > 0}
                         isOpen={isCardOpen}
                         onNext={handleNext}

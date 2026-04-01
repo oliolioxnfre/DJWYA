@@ -6,7 +6,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-from artists_categorize import bulk_categorize_artists, sync_artists_to_supabase
+from artists_categorize import bulk_categorize_artists, sync_artists_to_supabase, ArtistCleaner
 from classifier import VibeClassifier
 
 load_dotenv()
@@ -40,51 +40,6 @@ def fetch_edmtrain_festivals():
     except Exception as e:
         print(f"⚠️ Request failed: {e}")
         return []
-
-def parse_lineup_and_tba(artists_list):
-    cleaned_artists = set()
-    tba_flag = False
-    
-    for artist_name in artists_list:
-        upper_name = artist_name.upper()
-        
-        if "TBA" in upper_name or "TBD" in upper_name:
-            tba_flag = True
-            continue
-            
-        if artist_name.count("?") >= 3:
-            tba_flag = True
-            continue
-            
-        match = re.search(r'\((.*?)\)', artist_name)
-        if match:
-            inner_content = match.group(1)
-            # If inner contains split chars, extract and split
-            if re.search(r'\s+&\s+|\s+x\s+|\s+b2b\s+', inner_content, flags=re.IGNORECASE):
-                sub_artists = re.split(r'\s+&\s+|\s+x\s+|\s+b2b\s+', inner_content, flags=re.IGNORECASE)
-                for sa in sub_artists:
-                    if sa.strip():
-                        cleaned_artists.add(sa.strip())
-            else:
-                base_name = re.sub(r'\s*\(.*?\)\s*', '', artist_name).strip()
-                if base_name:
-                    if re.search(r'\s+&\s+|\s+x\s+|\s+b2b\s+', base_name, flags=re.IGNORECASE):
-                        sub_artists = re.split(r'\s+&\s+|\s+x\s+|\s+b2b\s+', base_name, flags=re.IGNORECASE)
-                        for sa in sub_artists:
-                            if sa.strip():
-                                cleaned_artists.add(sa.strip())
-                    else:
-                        cleaned_artists.add(base_name)
-        else:
-            if re.search(r'\s+&\s+|\s+x\s+|\s+b2b\s+', artist_name, flags=re.IGNORECASE):
-                sub_artists = re.split(r'\s+&\s+|\s+x\s+|\s+b2b\s+', artist_name, flags=re.IGNORECASE)
-                for sa in sub_artists:
-                    if sa.strip():
-                        cleaned_artists.add(sa.strip())
-            else:
-                cleaned_artists.add(artist_name.strip())
-                
-    return list(cleaned_artists), tba_flag
 
 def aggregate_edmtrain_festivals():
     events = fetch_edmtrain_festivals()
@@ -144,7 +99,7 @@ def aggregate_edmtrain_festivals():
             location_str = ", ".join([p for p in parts if p])
             
         # Analyze lineup & compute explicit TBA requirements
-        cleaned_lineup, name_triggered_tba = parse_lineup_and_tba(fest_data['artistList'])
+        cleaned_lineup, name_triggered_tba = ArtistCleaner.clean_lineup(fest_data['artistList'])
         
         start_date_obj = datetime.strptime(fest_data['start_date'], "%Y-%m-%d").date()
         end_date_obj = datetime.strptime(fest_data['end_date'], "%Y-%m-%d").date()
@@ -168,8 +123,8 @@ def aggregate_edmtrain_festivals():
             "location": location_str,
             "state": venue.get('state'),
             "city": venue.get('city'),
-            "country": venue.get('country'),
-            "tba": is_tba
+            "country": venue.get('country')
+            # "tba": is_tba # <--- Add 'tba' as boolean column to festivals table!
         }
         
         festival_id = None
@@ -207,18 +162,10 @@ def aggregate_edmtrain_festivals():
         if not festival_artists_dict:
             continue
             
-        # Filter out unresolved Last.fm artists (artists yielding NO genres)
-        filtered_artists = {}
-        for name, data in festival_artists_dict.items():
-            if data.get('genres') or data.get('genre_votes'):
-                filtered_artists[name] = data
-            else:
-                print(f"   ↳ 🚫 Dropping '{name}': Not resolved on Last.fm & no prior DB mapping.")
+        # We explicitly keep EVERY artist returned by categorization, even if they have NO genres. 
+        # This honors existing database mappings (e.g. "Chez" having a DB row but maybe no genres yet).
+        filtered_artists = festival_artists_dict
                 
-        if not filtered_artists:
-            print(f"   ↳ No valid electronic/mapped artists found in lineup. Continuing.")
-            continue
-            
         sync_artists_to_supabase(filtered_artists, supabase, user_id=None)
         
         slugs = [item['name'].lower().replace(" ", "-") for item in filtered_artists.values()]

@@ -17,9 +17,11 @@ export interface FestivalData {
     lng: number | null;
     location?: string;
     start_date?: string;
+    end_date?: string;
     size?: number | string;
     type?: string;
     fest_subgenres?: Record<string, number>;
+    tba?: boolean | null;
 }
 
 interface FestivalCardProps {

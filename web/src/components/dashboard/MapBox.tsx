@@ -36,12 +36,21 @@ const createPulseIcon = (matchScore: number) => {
 
 
 // Component to handle map flying
-function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+function MapUpdater({ center, zoom, offsetY = 0 }: { center: [number, number]; zoom: number; offsetY?: number }) {
     const map = useMap();
     useEffect(() => {
         if (!center || center.length !== 2) return;
+        
+        let targetLatLng = L.latLng(center[0], center[1]);
+        
+        if (offsetY !== 0) {
+            // Project to pixels at target zoom, add offset, then unproject
+            const targetPoint = map.project(targetLatLng, zoom);
+            const offsetPoint = L.point(targetPoint.x, targetPoint.y + offsetY);
+            targetLatLng = map.unproject(offsetPoint, zoom);
+        }
+
         const currentCenter = map.getCenter();
-        const targetLatLng = L.latLng(center[0], center[1]);
         const distance = currentCenter.distanceTo(targetLatLng);
 
         // Smooth flying options based on distance (distance in meters)
@@ -51,7 +60,7 @@ function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }
         };
 
         map.flyTo(targetLatLng, zoom, flyOptions);
-    }, [center, zoom, map]);
+    }, [center, zoom, map, offsetY]);
     return null;
 }
 
@@ -107,7 +116,11 @@ export default function MapBox({ festivals, selectedIndex, onSelectFestival }: M
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
             <ZoomControl position="topright" />
-            <MapUpdater center={activeCenter} zoom={activeZoom} />
+            <MapUpdater 
+                center={activeCenter} 
+                zoom={activeZoom} 
+                offsetY={selectedIndex >= 0 ? 120 : 0} 
+            />
 
             {festivals.map((fest, idx) => {
                 if (!fest.lat || !fest.lng) return null;
